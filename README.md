@@ -31,7 +31,7 @@ Teste rápido: `node tests/test_mcp.js` (ajuste o caminho `cwd` dentro do script
 ## Roadmap de adaptação
 
 1. ~~**Fuso horário Brasil**~~ — ✅ **Concluído (18/07/2026).** Nascimentos em 74 cidades brasileiras com timezone IANA (horário de verão histórico automático) e correção de longitude. Basta passar `birthCity: "São Paulo"` (etc.) nas ferramentas. Detalhes e testes em `docs/FASE1_FUSO_BRASIL.md`. Rodar o servidor com `TZ=Asia/Seoul`.
-2. **Tradução pt-BR** — as saídas usam termos coreanos (천간/지지/십성 etc.). Criar camada de tradução dos dados estruturados + glossário.
+2. ~~**Tradução pt-BR**~~ — ✅ **Concluído (18/07/2026).** Módulo `src/data/i18n/pt_br.ts` com dicionários completos (troncos, ramos, elementos, dez deuses, 15 sinsal, 14 gyeokguk, 24 termos solares) e `traduzirSaju()` — JSON 100% em português. Ver `docs/FASE2_TRADUCAO.md` e `docs/GLOSSARIO_PT_BR.md`.
 3. **Relatórios via LLM** — o JSON do motor vira prompt para gerar relatórios interpretativos em português.
 
 ## Licença
