@@ -240,3 +240,30 @@ export function traduzirSaju(saju: any): any {
       : undefined,
   };
 }
+
+/** Cores da sorte (오행 → cores) */
+export const CORES_PT: Record<string, string> = {
+  청색: 'azul', 녹색: 'verde', 적색: 'vermelho', 주황색: 'laranja',
+  분홍색: 'rosa', 황색: 'amarelo', 갈색: 'marrom', 백색: 'branco',
+  금색: 'dourado', 은색: 'prateado', 흑색: 'preto', 남색: 'azul-marinho',
+};
+
+/** Direções da sorte */
+export const DIRECOES_PT: Record<string, string> = {
+  동: 'leste', 서: 'oeste', 남: 'sul', 북: 'norte', 중앙: 'centro',
+  동쪽: 'leste', 서쪽: 'oeste', 남쪽: 'sul', 북쪽: 'norte',
+};
+
+/** Traduz a saída do getDailyFortune para pt-BR (conselho coreano é omitido — camada LLM) */
+export function traduzirDiaria(d: any): any {
+  return {
+    data: d.date,
+    sorteGeral: d.overallLuck,
+    riqueza: d.wealthLuck,
+    carreira: d.careerLuck,
+    saude: d.healthLuck,
+    amor: d.loveLuck,
+    corDaSorte: CORES_PT[d.luckyColor] ?? d.luckyColor,
+    direcaoDaSorte: DIRECOES_PT[d.luckyDirection] ?? d.luckyDirection,
+  };
+}
