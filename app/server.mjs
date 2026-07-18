@@ -17,7 +17,7 @@ process.env.TZ = 'Asia/Seoul'; // requisito do motor (ver docs/FASE1_FUSO_BRASIL
 import { createServer } from 'http';
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ENGINE = process.env.SAJU_ENGINE_DIST ?? join(HERE, '../fortuneteller/dist');
@@ -25,13 +25,16 @@ const PROMPTS = process.env.SAJU_PROMPTS ?? join(HERE, '../relatorios/prompts');
 const PORT = parseInt(process.env.PORT ?? '3333', 10);
 const MODELO = process.env.SAJU_LLM_MODEL ?? 'claude-sonnet-5';
 
-const { calculateSaju } = await import(join(ENGINE, 'lib/saju.js'));
-const { calculateDaeUn } = await import(join(ENGINE, 'lib/dae_un.js'));
-const { checkCompatibility } = await import(join(ENGINE, 'lib/compatibility.js'));
-const { getDailyFortune } = await import(join(ENGINE, 'lib/fortune.js'));
-const { BRAZIL_CITIES, normalizeBrazilCityName } = await import(join(ENGINE, 'data/brazil_cities.js'));
+// No Windows, import() dinâmico exige URL file:// — pathToFileURL resolve nas duas plataformas
+const importEngine = (rel) => import(pathToFileURL(join(ENGINE, rel)).href);
+
+const { calculateSaju } = await importEngine('lib/saju.js');
+const { calculateDaeUn } = await importEngine('lib/dae_un.js');
+const { checkCompatibility } = await importEngine('lib/compatibility.js');
+const { getDailyFortune } = await importEngine('lib/fortune.js');
+const { BRAZIL_CITIES, normalizeBrazilCityName } = await importEngine('data/brazil_cities.js');
 const { traduzirSaju, traduzirDiaria, ELEMENTOS_PT, TRONCOS_PT, RAMOS_PT } =
-  await import(join(ENGINE, 'data/i18n/pt_br.js'));
+  await importEngine('data/i18n/pt_br.js');
 
 const promptIndividual = readFileSync(join(PROMPTS, 'leitura_individual.md'), 'utf8');
 const promptSinastria = readFileSync(join(PROMPTS, 'sinastria.md'), 'utf8');

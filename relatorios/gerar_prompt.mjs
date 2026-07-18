@@ -13,15 +13,18 @@
  */
 import { readFileSync } from 'fs';
 import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ENGINE = process.env.SAJU_ENGINE_DIST ?? join(HERE, '../fortuneteller/dist');
 
-const { calculateSaju } = await import(join(ENGINE, 'lib/saju.js'));
-const { calculateDaeUn } = await import(join(ENGINE, 'lib/dae_un.js'));
-const { checkCompatibility } = await import(join(ENGINE, 'lib/compatibility.js'));
-const { traduzirSaju, ELEMENTOS_PT, TRONCOS_PT, RAMOS_PT } = await import(join(ENGINE, 'data/i18n/pt_br.js'));
+// No Windows, import() dinâmico exige URL file:// — pathToFileURL resolve nas duas plataformas
+const importEngine = (rel) => import(pathToFileURL(join(ENGINE, rel)).href);
+
+const { calculateSaju } = await importEngine('lib/saju.js');
+const { calculateDaeUn } = await importEngine('lib/dae_un.js');
+const { checkCompatibility } = await importEngine('lib/compatibility.js');
+const { traduzirSaju, ELEMENTOS_PT, TRONCOS_PT, RAMOS_PT } = await importEngine('data/i18n/pt_br.js');
 
 function traduzirDaeUn(periods) {
   return periods.slice(0, 10).map(p => ({
