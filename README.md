@@ -6,6 +6,8 @@ Base técnica para um aplicativo de leitura de Saju (사주, Quatro Pilares do D
 
 | Pasta | Conteúdo |
 |---|---|
+| `empresa/` | EMPRESA.md (contexto do negócio), pesquisa de mercado e registro de decisões |
+| `pesquisa/` | Especificação SAJU AI V3 (78 docs, visão de futuro) e relatórios de referência do mercado |
 | `app/` | Backend HTTP do produto + UI de teste (`node app/server.mjs` → http://localhost:3333) |
 | `fortuneteller/` | Motor de cálculo de Saju — base [hjsh200219/fortuneteller](https://github.com/hjsh200219/fortuneteller) v1.2.0 (MIT) + adaptações Brasil (fuso/longitude) + i18n pt-BR |
 | `relatorios/` | Camada LLM: prompts pt-BR, pipeline `gerar_prompt.mjs` e relatórios-exemplo |

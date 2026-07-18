@@ -38,6 +38,7 @@ const { traduzirSaju, traduzirDiaria, ELEMENTOS_PT, TRONCOS_PT, RAMOS_PT } =
 
 const promptIndividual = readFileSync(join(PROMPTS, 'leitura_individual.md'), 'utf8');
 const promptSinastria = readFileSync(join(PROMPTS, 'sinastria.md'), 'utf8');
+const promptPremium = readFileSync(join(PROMPTS, 'leitura_premium.md'), 'utf8');
 const indexHtml = readFileSync(join(HERE, 'public/index.html'), 'utf8');
 
 function traduzirDaeUn(periods) {
@@ -124,10 +125,13 @@ const server = createServer(async (req, res) => {
       if (!b.data || !b.cidade || !b.sexo) return json(res, 400, { erro: 'Campos obrigatórios: data, cidade, sexo (hora é opcional)' });
       const { leitura } = montarLeitura(b);
       const idade = new Date().getFullYear() - parseInt(b.data.slice(0, 4), 10);
-      const dados = { idadeAproximada: idade, ...leitura };
+      const premium = b.produto === 'premium';
+      const dados = { nome: b.nome || undefined, idadeAproximada: idade, ...leitura };
+      if (premium && b.tipoSanguineo) dados.tipoSanguineo = b.tipoSanguineo;
+      const sys = premium ? promptPremium : promptIndividual;
       const user = montarUser(dados);
-      const resposta = { leitura, prompt: { system: promptIndividual, user } };
-      if (b.gerarRelatorio) resposta.relatorio = await gerarRelatorioLLM(promptIndividual, user);
+      const resposta = { leitura, produto: premium ? 'premium' : 'essencial', llmDisponivel: !!process.env.ANTHROPIC_API_KEY, prompt: { system: sys, user } };
+      if (b.gerarRelatorio) resposta.relatorio = await gerarRelatorioLLM(sys, user);
       return json(res, 200, resposta);
     }
 
@@ -137,13 +141,16 @@ const server = createServer(async (req, res) => {
       const p1 = montarLeitura(b.pessoa1);
       const p2 = montarLeitura(b.pessoa2);
       const compat = checkCompatibility(p1.saju, p2.saju);
+      const tiposValidos = ['amorosa', 'societaria', 'amizade', 'familiar'];
+      const tipoRelacao = tiposValidos.includes(b.tipoRelacao) ? b.tipoRelacao : 'amorosa';
       const dados = {
-        pessoa1: p1.leitura,
-        pessoa2: p2.leitura,
+        tipoRelacao,
+        pessoa1: { nome: b.pessoa1.nome || undefined, ...p1.leitura },
+        pessoa2: { nome: b.pessoa2.nome || undefined, ...p2.leitura },
         analiseMotor: { score: compat.compatibilityScore, harmoniaElemental: compat.elementHarmony?.harmony },
       };
       const user = montarUser(dados);
-      const resposta = { dados, prompt: { system: promptSinastria, user } };
+      const resposta = { dados, llmDisponivel: !!process.env.ANTHROPIC_API_KEY, prompt: { system: promptSinastria, user } };
       if (b.gerarRelatorio) resposta.relatorio = await gerarRelatorioLLM(promptSinastria, user);
       return json(res, 200, resposta);
     }

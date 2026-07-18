@@ -3,30 +3,58 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SAJU Brasil — teste</title>
+<title>SAJU Brasil</title>
 <style>
-  :root { --roxo:#5b3a8f; --fundo:#f7f4fb; --borda:#ddd3ee; }
+  :root { --roxo:#5b3a8f; --roxo2:#7c5cb8; --fundo:#f7f4fb; --borda:#ddd3ee; }
   * { box-sizing:border-box; }
-  body { font-family:system-ui,sans-serif; margin:0; background:var(--fundo); color:#2a2135; }
-  header { background:var(--roxo); color:#fff; padding:16px 24px; }
+  body { font-family:Georgia,'Times New Roman',serif; margin:0; background:var(--fundo); color:#2a2135; }
+  header { background:var(--roxo); color:#fff; padding:16px 24px; font-family:system-ui,sans-serif; }
   header h1 { margin:0; font-size:20px; }
-  main { max-width:880px; margin:24px auto; padding:0 16px; }
+  main { max-width:900px; margin:24px auto; padding:0 16px; }
+  .abas, form, .acoes-relatorio, .nota { font-family:system-ui,sans-serif; }
   .abas { display:flex; gap:8px; margin-bottom:16px; }
   .abas button { padding:8px 18px; border:1px solid var(--borda); background:#fff; border-radius:20px; cursor:pointer; font-size:14px; }
   .abas button.ativa { background:var(--roxo); color:#fff; border-color:var(--roxo); }
-  form { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }
+  form { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:18px; display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
   label { font-size:12px; color:#6b5a85; display:block; margin-bottom:4px; }
-  input,select { width:100%; padding:8px; border:1px solid var(--borda); border-radius:8px; font-size:14px; }
-  .acao { grid-column:1/-1; }
+  input,select { width:100%; padding:8px; border:1px solid var(--borda); border-radius:8px; font-size:14px; font-family:system-ui,sans-serif; }
+  .acao { grid-column:1/-1; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
   .acao button { background:var(--roxo); color:#fff; border:none; padding:10px 26px; border-radius:8px; font-size:15px; cursor:pointer; }
+  .acao .chk { font-size:13px; color:#6b5a85; display:flex; align-items:center; gap:6px; }
   .grupo { grid-column:1/-1; font-weight:600; color:var(--roxo); border-top:1px dashed var(--borda); padding-top:10px; }
-  pre { background:#1f1830; color:#e8ddfb; padding:16px; border-radius:12px; overflow:auto; font-size:12px; max-height:480px; }
-  .oculto { display:none; }
-  .nota { font-size:12px; color:#8a7ba3; margin:8px 2px; }
+  .oculto { display:none !important; }
+  .nota { font-size:12px; color:#8a7ba3; margin:10px 2px; }
+
+  #relatorio { background:#fff; border:1px solid var(--borda); border-radius:12px; padding:32px 40px; margin-top:18px; }
+  #relatorio h2 { color:var(--roxo); font-size:22px; margin:8px 0 4px; }
+  #relatorio h3 { color:var(--roxo2); font-size:16px; margin:20px 0 6px; border-bottom:1px solid var(--borda); padding-bottom:4px; }
+  #relatorio p { line-height:1.65; margin:8px 0; }
+  #relatorio .sub { color:#8a7ba3; font-size:13px; font-family:system-ui,sans-serif; }
+  #relatorio .didatico { background:#faf8fd; border-left:3px solid var(--roxo2); padding:8px 12px; font-size:13.5px; color:#5a4d70; margin:6px 0 12px; line-height:1.55; }
+  .pilares { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin:12px 0; }
+  .pilar { border:1px solid var(--borda); border-radius:10px; padding:10px 12px; background:#faf8fd; }
+  .pilar b { color:var(--roxo); font-size:13px; font-family:system-ui,sans-serif; }
+  .pilar div { font-size:13.5px; margin-top:4px; }
+  .badges { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .badge { background:#efe9f8; border-radius:16px; padding:4px 12px; font-size:13px; }
+  .scores { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin:10px 0; }
+  .score { text-align:center; border:1px solid var(--borda); border-radius:10px; padding:10px; }
+  .score b { font-size:24px; color:var(--roxo); display:block; }
+  .score span { font-size:12px; color:#6b5a85; font-family:system-ui,sans-serif; }
+  .acoes-relatorio { margin-top:14px; display:flex; gap:10px; }
+  .acoes-relatorio button { background:#fff; color:var(--roxo); border:1px solid var(--roxo); padding:8px 18px; border-radius:8px; cursor:pointer; }
+  .aviso { background:#fdf6e3; border:1px solid #eadfa8; border-radius:8px; padding:10px 14px; font-size:13px; font-family:system-ui,sans-serif; }
+  #cru { background:#1f1830; color:#e8ddfb; padding:16px; border-radius:12px; overflow:auto; font-size:11px; max-height:300px; }
+
+  @media print {
+    header, .abas, form, .nota, .acoes-relatorio, #cru, .aviso-llm { display:none !important; }
+    body { background:#fff; }
+    #relatorio { border:none; padding:0; margin:0; }
+  }
 </style>
 </head>
 <body>
-<header><h1>🔮 SAJU Brasil — painel de teste</h1></header>
+<header><h1>🔮 SAJU Brasil</h1></header>
 <main>
   <div class="abas">
     <button class="ativa" data-aba="leitura">Leitura individual</button>
@@ -35,79 +63,175 @@
   </div>
 
   <form id="f-leitura">
+    <div style="grid-column:1/-1"><label>Nome (opcional — só personaliza o relatório; o Saju usa data, hora e local)</label><input name="nome" placeholder="Como você quer ser chamado(a) no relatório"></div>
     <div><label>Data de nascimento</label><input name="data" type="date" required value="1990-01-01"></div>
     <div><label>Hora (vazio = desconhecida)</label><input name="hora" type="time" value="12:00"></div>
     <div><label>Cidade</label><input name="cidade" list="cidades" required value="São Paulo" autocomplete="off"></div>
     <div><label>Sexo</label><select name="sexo"><option value="female">Feminino</option><option value="male">Masculino</option></select></div>
-    <div class="acao"><button>Calcular leitura</button></div>
+    <div><label>Produto</label><select name="produto"><option value="essencial">Leitura Individual (R$ 47)</option><option value="premium">Premium (R$ 197)</option></select></div>
+    <div class="acao"><button>Gerar leitura</button><label class="chk"><input type="checkbox" name="llm" checked> Gerar relatório narrativo (requer ANTHROPIC_API_KEY no servidor)</label></div>
   </form>
 
   <form id="f-sinastria" class="oculto">
     <div class="grupo">Pessoa 1</div>
+    <div><label>Nome (opcional)</label><input name="nome1"></div>
     <div><label>Data</label><input name="data1" type="date" required value="1990-01-01"></div>
     <div><label>Hora</label><input name="hora1" type="time" value="12:00"></div>
     <div><label>Cidade</label><input name="cidade1" list="cidades" required value="São Paulo" autocomplete="off"></div>
     <div><label>Sexo</label><select name="sexo1"><option value="female">Feminino</option><option value="male">Masculino</option></select></div>
     <div class="grupo">Pessoa 2</div>
+    <div><label>Nome (opcional)</label><input name="nome2"></div>
     <div><label>Data</label><input name="data2" type="date" required value="1992-07-20"></div>
     <div><label>Hora</label><input name="hora2" type="time" value="14:30"></div>
     <div><label>Cidade</label><input name="cidade2" list="cidades" required value="Manaus" autocomplete="off"></div>
     <div><label>Sexo</label><select name="sexo2"><option value="male">Masculino</option><option value="female">Feminino</option></select></div>
-    <div class="acao"><button>Calcular sinastria</button></div>
+    <div><label>Tipo de relação</label><select name="tipoRelacao"><option value="amorosa">Amorosa</option><option value="societaria">Societária / Negócios</option><option value="amizade">Amizade</option><option value="familiar">Familiar</option></select></div>
+    <div class="acao"><button>Gerar sinastria</button><label class="chk"><input type="checkbox" name="llm" checked> Gerar relatório narrativo</label></div>
   </form>
 
   <form id="f-diaria" class="oculto">
+    <div><label>Nome (opcional)</label><input name="nome"></div>
     <div><label>Data de nascimento</label><input name="data" type="date" required value="1990-01-01"></div>
     <div><label>Hora</label><input name="hora" type="time" required value="12:00"></div>
     <div><label>Cidade</label><input name="cidade" list="cidades" required value="São Paulo" autocomplete="off"></div>
     <div><label>Sexo</label><select name="sexo"><option value="female">Feminino</option><option value="male">Masculino</option></select></div>
-    <div><label>Dia-alvo</label><input name="alvo" type="date"></div>
+    <div><label>Dia-alvo (vazio = hoje)</label><input name="alvo" type="date"></div>
     <div class="acao"><button>Consultar dia</button></div>
   </form>
 
   <datalist id="cidades"></datalist>
-  <p class="nota">O resultado abaixo é o JSON do backend. No app final, a chave <code>prompt</code> alimenta o LLM que escreve o relatório narrativo (ou use <code>gerarRelatorio: true</code> com ANTHROPIC_API_KEY no servidor).</p>
-  <pre id="saida">Preencha o formulário e calcule.</pre>
+
+  <div id="relatorio" class="oculto"></div>
+  <div class="acoes-relatorio oculto" id="acoes">
+    <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+    <button onclick="document.getElementById('cru').classList.toggle('oculto')">Ver JSON técnico</button>
+  </div>
+  <pre id="cru" class="oculto"></pre>
 </main>
 <script>
+const $ = (id) => document.getElementById(id);
 const abas = document.querySelectorAll('.abas button');
 abas.forEach(b => b.onclick = () => {
   abas.forEach(x => x.classList.remove('ativa')); b.classList.add('ativa');
-  ['leitura','sinastria','diaria'].forEach(a =>
-    document.getElementById('f-'+a).classList.toggle('oculto', a !== b.dataset.aba));
+  ['leitura','sinastria','diaria'].forEach(a => $('f-'+a).classList.toggle('oculto', a !== b.dataset.aba));
+  $('relatorio').classList.add('oculto'); $('acoes').classList.add('oculto'); $('cru').classList.add('oculto');
 });
 
-// autocomplete de cidades
-fetch('/cidades').then(r=>r.json()).then(l => {
-  document.getElementById('cidades').innerHTML =
-    l.map(c => '<option value="'+c.nome+'">'+c.nome+' – '+c.uf+'</option>').join('');
-});
+fetch('/cidades').then(r=>r.json()).then(preencherCidades);
+function preencherCidades(l){ $('cidades').innerHTML = l.map(c=>'<option value="'+c.nome+'">'+c.nome+' – '+c.uf+'</option>').join(''); }
 document.querySelectorAll('input[list=cidades]').forEach(i => i.addEventListener('input', async e => {
-  const l = await (await fetch('/cidades?q='+encodeURIComponent(e.target.value))).json();
-  document.getElementById('cidades').innerHTML =
-    l.map(c => '<option value="'+c.nome+'">'+c.nome+' – '+c.uf+'</option>').join('');
+  preencherCidades(await (await fetch('/cidades?q='+encodeURIComponent(e.target.value))).json());
 }));
 
-const saida = document.getElementById('saida');
-async function postar(rota, corpo) {
-  saida.textContent = 'Calculando…';
-  const r = await fetch(rota, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(corpo) });
-  saida.textContent = JSON.stringify(await r.json(), null, 2);
+// markdown minimalista → HTML
+function md(t){
+  return t
+    .replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h3>$1</h3>').replace(/^# (.*)$/gm,'<h2>$1</h2>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\*([^*]+)\*/g,'<em>$1</em>')
+    .replace(/^---$/gm,'<hr>')
+    .split(/\n\n+/).map(p => p.match(/^<h|^<hr/) ? p : '<p>'+p.replace(/\n/g,'<br>')+'</p>').join('');
 }
-document.getElementById('f-leitura').onsubmit = e => { e.preventDefault();
-  const f = new FormData(e.target);
-  postar('/leitura', { data:f.get('data'), hora:f.get('hora')||undefined, cidade:f.get('cidade'), sexo:f.get('sexo') });
+
+const EXPLICA = {
+  pilares: 'O Saju monta seu mapa com quatro "pilares" — ano, mês, dia e hora do nascimento. Cada pilar tem duas partes: um tronco celeste (energia visível) e um ramo terrestre (o animal, energia de base). Leia assim: o ANO fala das suas raízes e família; o MÊS, da carreira e vida social; o DIA, de quem você é na intimidade e nas parcerias; a HORA, dos seus projetos e da maturidade.',
+  mestre: 'O Mestre do Dia é o elemento que rege o seu pilar do dia — o coração do mapa, o "você essencial". Todo o restante da leitura gira em torno de fortalecer ou equilibrar esse elemento.',
+  elementos: 'Tudo no Saju se organiza em cinco elementos (Madeira, Fogo, Terra, Metal e Água), que se alimentam e se controlam em ciclos. O ideal não é ter todos iguais, e sim saber o que fazer com os excessos e as faltas: elementos dominantes mostram seus pontos fortes naturais; os ausentes, as habilidades a cultivar conscientemente.',
+  estrelas: 'As estrelas simbólicas (sinsal) são marcações clássicas que destacam talentos e pontos de atenção específicos do seu mapa — como notas de rodapé do destino. Nenhuma é "boa" ou "má" em si: cada uma indica uma energia a ser bem usada.',
+  padrao: 'O padrão de vida (gyeokguk) resume a estratégia natural do seu mapa — o jeito como você tende a prosperar. O Elemento de Equilíbrio (Yongsin) é o nutriente que falta: busque-o em atividades, ambientes e cores ligados a ele.',
+  ciclos: 'A vida, no Saju, avança em ciclos de 10 anos (Dae-un), cada um colorido por um par de elementos. Eles indicam o clima de cada década — quando plantar, consolidar ou colher. Localize sua idade atual e veja a energia da sua fase.',
+  score: 'O score é um termômetro geral da combinação dos dois mapas — não um veredito. Valores medianos são comuns e indicam uma relação que cresce com consciência das diferenças. O que importa está nos detalhes: o que um supre no mapa do outro.',
+  diaria: 'A sorte do dia compara a energia do dia-alvo com o seu mapa de nascimento. Use como bússola leve: números altos indicam fluidez na área; baixos pedem mais atenção e menos pressa. A cor e a direção favoráveis são reforços simbólicos do elemento do dia.'
 };
-document.getElementById('f-sinastria').onsubmit = e => { e.preventDefault();
+const didatico = (k) => '<div class="didatico">' + EXPLICA[k] + '</div>';
+
+function pilarCard(nome, p){
+  if (!p) return '';
+  return '<div class="pilar"><b>'+nome+'</b><div>'+p.tronco+'</div><div>'+p.ramo+'</div></div>';
+}
+
+function estruturaLeitura(titulo, l, nome){
+  let h = '<h2>'+titulo+'</h2><p class="sub">'+(nome ? nome+' — ' : '')+l.nascimento.data+' às '+l.nascimento.hora+' · '+l.nascimento.cidade+'</p>';
+  if (l.horaDesconhecida) h += '<p class="sub">⚠️ Hora desconhecida: leitura pelos 3 pilares (ano, mês, dia).</p>';
+  h += '<h3>Os pilares</h3>' + didatico('pilares') + '<div class="pilares">'
+    + pilarCard('ANO', l.pilares.ano) + pilarCard('MÊS', l.pilares.mes)
+    + pilarCard('DIA', l.pilares.dia) + pilarCard('HORA', l.pilares.hora) + '</div>';
+  h += '<p><strong>Mestre do Dia:</strong> '+l.mestreDoDia+'</p>' + didatico('mestre');
+  h += '<h3>Elementos</h3>' + didatico('elementos') + '<div class="badges">'
+    + Object.entries(l.elementos.contagem).map(([e,n])=>'<span class="badge">'+e+': '+n+'</span>').join('') + '</div>'
+    + '<p class="sub">Dominantes: '+(l.elementos.dominantes.join(', ')||'—')+' · Fracos/ausentes: '+(l.elementos.fracos.join(', ')||'—')+'</p>';
+  if (l.sinsal?.length) h += '<h3>Estrelas simbólicas</h3>' + didatico('estrelas') + l.sinsal.map(s=>'<p><strong>'+s.nome+'</strong> ('+s.hanja+') — '+s.significado+'</p>').join('');
+  if (l.padraoDeVida) h += '<h3>Padrão de vida</h3>' + didatico('padrao') + '<p><strong>'+l.padraoDeVida.nome+'</strong> ('+l.padraoDeVida.hanja+')'+(l.padraoDeVida.essencia?' — '+l.padraoDeVida.essencia:'')+'</p>';
+  if (l.yongsin) h += '<p><strong>Elemento de equilíbrio (Yongsin):</strong> '+l.yongsin.elementoPrincipal+(l.yongsin.elementoSecundario?' (apoio: '+l.yongsin.elementoSecundario+')':'')+'</p>';
+  if (l.ciclosDeDecada?.length) h += '<h3>Ciclos de década</h3>' + didatico('ciclos') + '<div class="badges">'+l.ciclosDeDecada.map(c=>'<span class="badge">'+c.faixaEtaria+': '+c.tronco.split(' — ')[1]+' / '+c.ramo.replace(/^[^—]+— /,'')+'</span>').join('')+'</div>';
+  return h;
+}
+
+async function postar(rota, corpo){
+  $('relatorio').classList.remove('oculto');
+  $('relatorio').innerHTML = '<p>⏳ Calculando'+(corpo.gerarRelatorio||corpo.pessoa1?', consultando o mapa e escrevendo o relatório…':'…')+'</p>';
+  $('acoes').classList.add('oculto');
+  const r = await fetch(rota, { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(corpo) });
+  const j = await r.json();
+  if (j.erro) { $('relatorio').innerHTML = '<p class="aviso">Erro: '+j.erro+'</p>'; return null; }
+  $('cru').textContent = JSON.stringify(j, null, 2);
+  $('acoes').classList.remove('oculto');
+  return j;
+}
+
+function avisoLLM(j, quisNarrativo){
+  if (quisNarrativo && !j.relatorio) {
+    return '<div class="aviso aviso-llm">O relatório narrativo não foi gerado'
+      + (j.llmDisponivel ? ' (erro na chamada ao LLM).' : ': o servidor está sem ANTHROPIC_API_KEY. A estrutura acima já é a leitura completa; o texto corrido é gerado pelo LLM.')
+      + '</div>';
+  }
+  return '';
+}
+
+$('f-leitura').onsubmit = async e => { e.preventDefault();
   const f = new FormData(e.target);
-  postar('/sinastria', {
-    pessoa1:{ data:f.get('data1'), hora:f.get('hora1')||undefined, cidade:f.get('cidade1'), sexo:f.get('sexo1') },
-    pessoa2:{ data:f.get('data2'), hora:f.get('hora2')||undefined, cidade:f.get('cidade2'), sexo:f.get('sexo2') },
-  });
+  const quer = f.get('llm') === 'on';
+  const j = await postar('/leitura', { nome:f.get('nome')||undefined, data:f.get('data'), hora:f.get('hora')||undefined, cidade:f.get('cidade'), sexo:f.get('sexo'), produto:f.get('produto'), gerarRelatorio: quer });
+  if (!j) return;
+  let h = estruturaLeitura('Leitura de Saju', j.leitura, f.get('nome'));
+  if (j.relatorio) h += '<hr>' + md(j.relatorio);
+  h += avisoLLM(j, quer);
+  $('relatorio').innerHTML = h;
 };
-document.getElementById('f-diaria').onsubmit = e => { e.preventDefault();
+
+$('f-sinastria').onsubmit = async e => { e.preventDefault();
   const f = new FormData(e.target);
-  postar('/diaria', { data:f.get('data'), hora:f.get('hora'), cidade:f.get('cidade'), sexo:f.get('sexo'), alvo:f.get('alvo')||undefined });
+  const quer = f.get('llm') === 'on';
+  const corpo = {
+    pessoa1:{ nome:f.get('nome1')||undefined, data:f.get('data1'), hora:f.get('hora1')||undefined, cidade:f.get('cidade1'), sexo:f.get('sexo1') },
+    pessoa2:{ nome:f.get('nome2')||undefined, data:f.get('data2'), hora:f.get('hora2')||undefined, cidade:f.get('cidade2'), sexo:f.get('sexo2') },
+    tipoRelacao: f.get('tipoRelacao'),
+    gerarRelatorio: quer,
+  };
+  const j = await postar('/sinastria', corpo);
+  if (!j) return;
+  const d = j.dados;
+  let h = '<h2>Sinastria</h2>'
+    + '<div class="scores"><div class="score"><b>'+d.analiseMotor.score+'</b><span>score geral (0–100)</span></div>'
+    + '<div class="score"><b>'+(d.analiseMotor.harmoniaElemental ?? '—')+'</b><span>harmonia elemental</span></div></div>' + didatico('score')
+    + estruturaLeitura('Pessoa 1', d.pessoa1, corpo.pessoa1.nome)
+    + '<hr>' + estruturaLeitura('Pessoa 2', d.pessoa2, corpo.pessoa2.nome);
+  if (j.relatorio) h += '<hr>' + md(j.relatorio);
+  h += avisoLLM(j, quer);
+  $('relatorio').innerHTML = h;
+};
+
+$('f-diaria').onsubmit = async e => { e.preventDefault();
+  const f = new FormData(e.target);
+  const j = await postar('/diaria', { data:f.get('data'), hora:f.get('hora'), cidade:f.get('cidade'), sexo:f.get('sexo'), alvo:f.get('alvo')||undefined });
+  if (!j) return;
+  const d = j.diaria;
+  $('relatorio').innerHTML = '<h2>Sorte do dia '+d.data.split('-').reverse().join('/')+'</h2>'
+    + (f.get('nome') ? '<p class="sub">'+f.get('nome')+'</p>' : '')
+    + '<div class="scores">'
+    + [['Geral',d.sorteGeral],['Riqueza',d.riqueza],['Carreira',d.carreira],['Saúde',d.saude],['Amor',d.amor]]
+        .map(([n,v])=>'<div class="score"><b>'+v+'</b><span>'+n+'</span></div>').join('')
+    + '</div>'
+    + '<p><strong>Cor da sorte:</strong> '+d.corDaSorte+' · <strong>Direção favorável:</strong> '+d.direcaoDaSorte+'</p>' + didatico('diaria');
 };
 </script>
 </body>
