@@ -8,6 +8,8 @@
  * 대한민국 전국 시군구 경도 (동경 기준, E)
  * 총 229개 시군구 (2024년 기준)
  */
+import { getBrazilCityInfo } from './brazil_cities.js';
+
 export const KOREA_CITY_LONGITUDE: Record<string, number> = {
   // 특별시/광역시 (8개)
   서울: 126.9784,
@@ -239,6 +241,11 @@ export function resolveBirthCityForSaju(birthCity?: string): string {
   }
   if (KOREA_CITY_LONGITUDE[name] !== undefined) {
     return name;
+  }
+  // SAJU Brasil: preserva nome canônico de cidade brasileira reconhecida
+  const brazilCity = getBrazilCityInfo(name);
+  if (brazilCity) {
+    return brazilCity.name;
   }
   return '서울';
 }

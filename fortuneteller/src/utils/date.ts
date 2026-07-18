@@ -6,6 +6,8 @@
 import { parseISO, format, addMinutes, isValid, differenceInYears } from 'date-fns';
 import { toDate, fromZonedTime } from 'date-fns-tz';
 import { getLongitudeOffsetMinutesForSaju } from '../data/longitude_table.js';
+import { getBrazilCityInfo, isBrazilBirthCity } from '../data/brazil_cities.js';
+import { formatInTimeZone } from 'date-fns-tz';
 
 /**
  * 한국 시간대
@@ -38,9 +40,46 @@ export function getAdjustedBirthInstantForSaju(
   birthTime: string,
   birthCity?: string
 ): Date {
+  // SAJU Brasil: cidades brasileiras seguem fluxo próprio (timezone IANA + longitude)
+  if (isBrazilBirthCity(birthCity)) {
+    return getAdjustedBirthInstantBrazilForSaju(solarDate, birthTime, birthCity!);
+  }
   const wall = parseBirthDateTimeKorea(solarDate, birthTime);
   const offsetMin = getLongitudeOffsetMinutesForSaju(birthCity);
   return addMinutes(wall, offsetMin);
+}
+
+/**
+ * SAJU Brasil — instante ajustado para nascimentos no Brasil.
+ *
+ * 1. Interpreta a hora civil na timezone IANA da cidade (horário de verão
+ *    histórico 1931–2019 aplicado automaticamente) → instante UTC.
+ * 2. Converte para hora solar média local: UTC + longitude × 4 min/grau.
+ * 3. Re-ancora esses dígitos em Asia/Seoul, pois todo o pipeline de pilares
+ *    (dia via formatInTimeZone KST, hora via 'H' em KST) lê o instante
+ *    renderizado em Seul. Assim os dígitos lidos são exatamente a hora solar
+ *    verdadeira do local de nascimento brasileiro.
+ *
+ * Limitação conhecida: se os dígitos re-ancorados caírem exatamente numa
+ * lacuna de DST coreano (1948–60, 1987–88), há deslocamento de 1h.
+ * Janela raríssima; documentada em docs/ROADMAP.md.
+ */
+export function getAdjustedBirthInstantBrazilForSaju(
+  solarDate: string,
+  birthTime: string,
+  birthCity: string
+): Date {
+  const info = getBrazilCityInfo(birthCity);
+  if (!info) {
+    throw new Error(`Cidade brasileira não reconhecida: ${birthCity}`);
+  }
+  const utcInstant = toDate(`${solarDate}T${birthTime}:00`, { timeZone: info.timezone });
+  if (isNaN(utcInstant.getTime())) {
+    throw new Error(`Data/hora de nascimento inválida: ${solarDate} ${birthTime}`);
+  }
+  const solarInstant = addMinutes(utcInstant, Math.round(info.longitude * 4));
+  const digits = formatInTimeZone(solarInstant, 'UTC', "yyyy-MM-dd'T'HH:mm:ss");
+  return toDate(digits, { timeZone: KOREA_TIMEZONE });
 }
 
 /**

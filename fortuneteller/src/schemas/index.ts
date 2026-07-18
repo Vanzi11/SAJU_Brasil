@@ -42,7 +42,7 @@ export const BirthCitySchema = z
   .string()
   .optional()
   .describe(
-    '출생 시군구(한글 키: 서울·부산 등). 사주 도구 호출 전 사용자에게 확인 권장. 생략 시 서울 경도로 진태양시 보정'
+    '출생 도시. Coreia: 한글 키(서울·부산 등). Brasil: nome da cidade (ex.: São Paulo, Rio de Janeiro, Manaus) — aplica timezone IANA com horário de verão histórico e correção de longitude. 생략 시 서울'
   );
 
 export const CalculateSajuSchema = z.object({

@@ -30,7 +30,7 @@ Teste rápido: `node tests/test_mcp.js` (ajuste o caminho `cwd` dentro do script
 
 ## Roadmap de adaptação
 
-1. **Fuso horário Brasil** — o cálculo assume nascimento na Coreia (UTC+9, longitude vs. 135°E). Precisamos parametrizar timezone + longitude da cidade de nascimento brasileira, incluindo horário de verão histórico. Detalhes em `docs/ROADMAP.md`.
+1. ~~**Fuso horário Brasil**~~ — ✅ **Concluído (18/07/2026).** Nascimentos em 74 cidades brasileiras com timezone IANA (horário de verão histórico automático) e correção de longitude. Basta passar `birthCity: "São Paulo"` (etc.) nas ferramentas. Detalhes e testes em `docs/FASE1_FUSO_BRASIL.md`. Rodar o servidor com `TZ=Asia/Seoul`.
 2. **Tradução pt-BR** — as saídas usam termos coreanos (천간/지지/십성 etc.). Criar camada de tradução dos dados estruturados + glossário.
 3. **Relatórios via LLM** — o JSON do motor vira prompt para gerar relatórios interpretativos em português.
 
