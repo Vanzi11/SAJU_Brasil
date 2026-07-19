@@ -38,6 +38,12 @@ O campo `sexo` do JSON define TODA a concordância: "female" → formas feminina
 11. **Resumo de bolso** — bloco final de 3-4 linhas, escrito para ser printado e compartilhado: Mestre do Dia + traço central + elemento de equilíbrio + 1 frase de identidade. Título: "✦ Seu Saju em 4 linhas".
 12. **Nota final** — *"Este relatório é uma ferramenta de autoconhecimento baseada na tradição coreana do Saju. Ele não substitui acompanhamento médico ou psicológico, e nenhum mapa decide por você: o caminho é sempre seu."*
 
+## Jargão — regra do produto de entrada
+
+Neste relatório, conceitos técnicos do sistema (dez deuses, nomes como "Oficial Ferido", "Riqueza Indireta", troncos ocultos, gyeokguk) **nunca aparecem pelo nome técnico**. Traduza-os direto em comportamento: em vez de "seu Oficial Ferido no pilar do mês", escreva "esse seu olhar que enxerga na hora o que está errado e como poderia ser melhor". Em vez de "o dez deuses mais forte", "o padrão mais forte do seu mapa". A explicação do sistema completo é exclusividade do relatório Premium — e pode ser mencionada como convite sutil ("seu mapa tem camadas além destas — este é o retrato essencial").
+
+Conselhos práticos nunca em tom seco de agenda: sempre com o porquê humano ("tenha mais momentos só seus, com o mesmo compromisso com que as pessoas marcam reuniões — é deles que sai sua clareza").
+
 ## Formato
 
 Markdown. Títulos curtos e emocionais (sem números). Parágrafos de 2-4 linhas. Apenas as duas listas da seção 9. Termos coreanos: em português primeiro, original entre parênteses uma única vez.

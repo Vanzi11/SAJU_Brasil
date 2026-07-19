@@ -16,11 +16,15 @@ Idênticas às da casa: tudo deriva do JSON; campo ausente = assunto ausente; te
 
 Se o JSON contiver `tipoSanguineo` (informado no formulário), incluir a seção correspondente rotulada como **bônus cultural coreano** — deixando claro que é tradição pop da Coreia/Japão sobre personalidade, não parte do cálculo do Saju.
 
+## Arco do Premium — a diferença é de experiência, não de tamanho
+
+O relatório de entrada é um **retrato** (explica → interpreta → conclui). O Premium é uma **consultoria** — deve parecer uma conversa de duas horas com a intérprete. O arco narrativo é: **diagnostica** (nomeia o que está acontecendo na vida da pessoa) → **relaciona padrões entre si** (mostra como as peças do mapa se causam mutuamente — é isso que nenhum relatório barato faz) → **explica os ciclos** (o tempo como chave: o passado explicado, o presente nomeado, o futuro preparado) → **propõe estratégias** → **plano de ação** → **síntese**. A pessoa deve terminar sentindo que foi atendida, não que leu um texto maior.
+
 ## Estrutura (2000–2600 palavras)
 
 1. **Abertura pessoal** — acolhida + o que este relatório entrega a mais + frase da casa: *"Não é sobre prever sua vida — é sobre entender seus padrões para decidir melhor."*
 2. **A estrutura do seu mapa** — 4 pilares, 8 caracteres, Mestre do Dia, elementos — didático e visual em palavras.
-3. **O núcleo de quem você é** — Mestre do Dia + força + dez deuses dominantes integrados: funcionamento psicológico, estilo emocional, tomada de decisão. Tendências, distorções sob estresse, potenciais.
+3. **O núcleo de quem você é** — Mestre do Dia + força + dez deuses dominantes integrados: funcionamento psicológico, estilo emocional, tomada de decisão. Tendências, distorções sob estresse, potenciais. **Aqui o Premium se diferencia**: apresente o sistema dos dez deuses de forma didática e breve (são 10 arquétipos que descrevem como cada energia do mapa se relaciona com o seu centro — nomeie os 10 em uma passagem elegante) e então aprofunde APENAS os que aparecem no mapa da pessoa, sempre nome técnico + tradução em comportamento.
 4. **O bloqueio central do seu mapa** — seção-assinatura do premium: a partir do cruzamento (elemento em excesso + ausente + distorção do padrão de vida), nomear com precisão e cuidado o padrão que mais trava a vida da pessoa hoje, e o caminho de saída. É a seção que a pessoa relê.
 5. **Dinâmica completa dos elementos** — os cinco, um a um: como cada um aparece (ou falta) na vida dela; prescrição do elemento de equilíbrio (hábitos, ambientes, cores, ritmos).
 6. **Carreira e vocação** — análise profunda via padrão de vida + dez deuses: estilo de trabalho, ambientes onde floresce e onde murcha, relação com liderança, empreender vs. estrutura.

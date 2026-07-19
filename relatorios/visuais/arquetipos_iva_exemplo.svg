@@ -1,0 +1,48 @@
+<svg viewBox="0 0 800 640" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, serif">
+  <rect width="800" height="640" fill="#faf8fd"/>
+  <text x="400" y="52" text-anchor="middle" font-size="26" fill="#5b3a8f" font-weight="bold">Os 10 Arquétipos do seu mapa</text>
+  <text x="400" y="78" text-anchor="middle" font-size="14" fill="#8a7ba3">Ivã · como cada energia se relaciona com o seu centro (Mestre do Dia: Mu 戊)</text>
+
+  <!-- Par 1: Relações de igual -->
+  <text x="70" y="122" font-size="12" fill="#8a7ba3" font-style="italic">RELAÇÕES DE IGUAL</text>
+  <rect x="70" y="132" width="320" height="72" rx="10" fill="#efece5" stroke="#ddd3ee"/>
+  <text x="90" y="160" font-size="16" fill="#9a8fb0">Companheiro 比肩</text>
+  <text x="90" y="182" font-size="12" fill="#b0a6c4">ausente — você funciona como referência solitária</text>
+  <rect x="410" y="132" width="320" height="72" rx="10" fill="#efece5" stroke="#ddd3ee"/>
+  <text x="430" y="160" font-size="16" fill="#9a8fb0">Rival 劫財</text>
+  <text x="430" y="182" font-size="12" fill="#b0a6c4">ausente — competição não te move</text>
+
+  <!-- Par 2: Expressão criativa -->
+  <text x="70" y="236" font-size="12" fill="#8a7ba3" font-style="italic">EXPRESSÃO CRIATIVA</text>
+  <rect x="70" y="246" width="320" height="72" rx="10" fill="#efece5" stroke="#ddd3ee"/>
+  <text x="90" y="274" font-size="16" fill="#9a8fb0">Deus do Alimento 食神</text>
+  <text x="90" y="296" font-size="12" fill="#b0a6c4">ausente</text>
+  <rect x="410" y="246" width="320" height="72" rx="10" fill="#7c5cb8" stroke="#5b3a8f"/>
+  <text x="430" y="274" font-size="16" fill="#ffffff" font-weight="bold">Oficial Ferido 傷官 ●</text>
+  <text x="430" y="296" font-size="12" fill="#e8ddfb">o olhar que vê o que está errado — e como melhorar</text>
+
+  <!-- Par 3: Geração de valor -->
+  <text x="70" y="350" font-size="12" fill="#8a7ba3" font-style="italic">GERAÇÃO DE VALOR</text>
+  <rect x="70" y="360" width="320" height="72" rx="10" fill="#5b3a8f" stroke="#3d2761"/>
+  <text x="90" y="388" font-size="16" fill="#ffffff" font-weight="bold">Riqueza Indireta 偏財 ●●</text>
+  <text x="90" y="410" font-size="12" fill="#e8ddfb">DOMINANTE — o caçador de oportunidades</text>
+  <rect x="410" y="360" width="320" height="72" rx="10" fill="#efece5" stroke="#ddd3ee"/>
+  <text x="430" y="388" font-size="16" fill="#9a8fb0">Riqueza Direta 正財</text>
+  <text x="430" y="410" font-size="12" fill="#b0a6c4">ausente — salário fixo não é seu caminho natural</text>
+
+  <!-- Par 4: Ordem e autoridade -->
+  <text x="70" y="464" font-size="12" fill="#8a7ba3" font-style="italic">ORDEM E AUTORIDADE</text>
+  <rect x="70" y="474" width="320" height="72" rx="10" fill="#efece5" stroke="#ddd3ee"/>
+  <text x="90" y="502" font-size="16" fill="#9a8fb0">Oficial Direto 正官</text>
+  <text x="90" y="524" font-size="12" fill="#b0a6c4">ausente — hierarquia não tem morada no seu mapa</text>
+  <rect x="410" y="474" width="320" height="72" rx="10" fill="#efece5" stroke="#ddd3ee"/>
+  <text x="430" y="502" font-size="16" fill="#9a8fb0">Oficial Indireto 偏官</text>
+  <text x="430" y="524" font-size="12" fill="#b0a6c4">ausente</text>
+
+  <!-- Par 5: Saber e amparo -->
+  <text x="70" y="578" font-size="12" fill="#8a7ba3" font-style="italic">SABER E AMPARO</text>
+  <rect x="70" y="588" width="320" height="42" rx="10" fill="#b9a5dd" stroke="#7c5cb8"/>
+  <text x="90" y="614" font-size="15" fill="#2a2135" font-weight="bold">Selo Direto 正印 ◐  o amparo do conhecimento</text>
+  <rect x="410" y="588" width="320" height="42" rx="10" fill="#efece5" stroke="#ddd3ee"/>
+  <text x="430" y="614" font-size="15" fill="#9a8fb0">Selo Indireto 偏印 · ausente</text>
+</svg>
