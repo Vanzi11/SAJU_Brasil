@@ -1,17 +1,37 @@
-# Saju Brasil — Leitura Premium (Ivã) — PDF generator
+# Saju Brasil — Leitura Premium — PDF generator (v5)
 
-Standalone reconstruction of the Lovable-generated PDF (v5). Produces an
-18-page A4 report with an editorial "Korean art book" aesthetic.
+Gerador em Python/reportlab do visual "livro de arte de Seul" (D9): relatório
+A4 editorial, capa com hanja fantasma, pilares como cartas, elementos como
+círculos de tinta, capítulos narrativos com paginação automática e selo
+vermelho (dojang).
 
-## Requirements
+## Requisitos
 
 - Python 3.9+
 - `pip install reportlab`
 
-## Files
+## Uso
 
-    build_pdf.py                           # generator (single file)
-    data/relatorio_iva_premium_demonstracao.md   # source content (Ivã)
+    python build_pdf.py entrada.json saida.pdf
+
+`entrada.json` segue a mesma interface do gerador v4 (`app/pdf/gerar_pdf.py`):
+
+```json
+{
+  "produto": "premium",
+  "nome": "Ivã",
+  "idadeAproximada": 43,
+  "leitura": { "...saída de traduzirSaju() + ciclosDeDecada..." },
+  "relatorio": "markdown escrito pelo LLM a partir de relatorios/prompts/leitura_premium.md, ou null"
+}
+```
+
+Ligado no endpoint `POST /pdf` do `app/server.mjs` quando `produto === 'premium'`.
+
+## Arquivos
+
+    build_pdf.py                                   # gerador (arquivo único)
+    data/relatorio_iva_premium_demonstracao.md      # relatório de referência (Ivã) — bom fixture de teste
     fonts/InstrumentSerif-Regular.ttf
     fonts/InstrumentSerif-Italic.ttf
     fonts/CrimsonPro-Regular.ttf
@@ -19,27 +39,32 @@ Standalone reconstruction of the Lovable-generated PDF (v5). Produces an
     fonts/Inter-Regular.ttf
     fonts/Inter-Italic.ttf
 
-Hanja/CJK glyphs use ReportLab's built-in CID font `HeiseiMin-W3`
-(Adobe-Japan1); no extra TTF needed.
+## Como funciona a paginação dinâmica
 
-## Run
+- Páginas fixas/estruturais (capa, colofão, introdução, método, pilares, elementos,
+  respiro do Mestre do Dia): 1 página cada, com dados do JSON do motor.
+- `dados['relatorio']` é dividido em capítulos por `##` (e `###` para o "Resumo de
+  bolso"). Cada capítulo flui com paginação automática — inclusive quebra NO MEIO
+  de um parágrafo se o texto for maior que uma página — então o relatório NÃO tem
+  mais um número fixo de páginas (o v5 original tinha exatamente 18).
+- A seção com heading contendo "ciclo"/"década"/"tempo" dispara também a página de
+  linha do tempo dedicada (dados de `leitura.ciclosDeDecada`, não da prosa).
+- O heading `### ✦ ... 4 linhas` (ou similar) é extraído com regex `**Label:**
+  valor` para a página de síntese; se não existir (relatório ainda não gerado, ou
+  formato diferente), a síntese cai para um fallback 100% derivado do JSON do motor.
+- Hanja usa uma fonte TTF embutida de verdade (nunca a CID `HeiseiMin-W3`, que não
+  embute no PDF) — busca em `_cjk_candidates()`: `malgun.ttf` no Windows,
+  `DroidSansFallbackFull`/Noto no Linux. Se nada for encontrado, os glifos hanja
+  são simplesmente omitidos (degradação graciosa).
 
-    python build_pdf.py
+## Testar sem o servidor
 
-Output: `leitura_premium_iva.pdf` in the same directory.
+Use `data/relatorio_iva_premium_demonstracao.md` (texto real do Ivã) para montar um
+`entrada.json` de teste rápido — é o melhor fixture porque exercita todos os
+padrões de heading (`##`, `### ✦ 4 linhas`, nota final) que o parser espera.
 
-## Notes
+## Notas
 
-- Content is currently inlined in `build_pdf.py` (page-by-page functions).
-  The markdown in `data/` is kept as the canonical source you can edit
-  and re-wire into the script when needed.
-- Palette, fonts and layout constants live at the top of `build_pdf.py`.
-- Font paths are resolved relative to the script (`./fonts/`).
-- Fonts: Instrument Serif and Crimson Pro are OFL, Inter is OFL — see
-  Google Fonts for licenses.
-
-## Caveat
-
-This is a reconstruction from the rendered v5 PDF, not the byte-identical
-original script (which was lost in an ephemeral sandbox reset). Layout
-matches v5 closely; small kerning / line-break differences are expected.
+- Paleta, fontes e constantes de layout ficam no topo de `build_pdf.py`.
+- Fontes: Instrument Serif e Crimson Pro são OFL, Inter é OFL — ver licenças no
+  Google Fonts.

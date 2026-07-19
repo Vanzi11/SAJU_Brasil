@@ -181,8 +181,12 @@ const server = createServer(async (req, res) => {
       const saida = join(tmpdir(), `saju_pdf_${Date.now()}.pdf`);
       writeFileSync(entrada, JSON.stringify({ produto: premium ? 'premium' : 'essencial', nome: b.nome || null, idadeAproximada: idade, leitura, relatorio }));
       const py = process.platform === 'win32' ? 'python' : 'python3';
+      // Visual v5 ("livro de arte de Seul", D9) está parametrizado só para o Premium
+      // por enquanto — ver pendência "PDF do Essencial no visual v5" em CONTINUIDADE.md.
+      // Essencial continua no gerador v4 até essa tarefa ser feita.
+      const script = premium ? join(HERE, 'pdf/premium_v5/build_pdf.py') : join(HERE, 'pdf/gerar_pdf.py');
       await new Promise((ok, ruim) => {
-        const pr = spawn(py, [join(HERE, 'pdf/gerar_pdf.py'), entrada, saida]);
+        const pr = spawn(py, [script, entrada, saida]);
         let err = ''; pr.stderr.on('data', d => err += d);
         pr.on('close', cod => cod === 0 ? ok() : ruim(new Error('gerar_pdf: ' + err.slice(0, 400))));
       });

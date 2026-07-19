@@ -38,3 +38,18 @@ Decisões tomadas em conjunto (Ivã + Claude). Nada aqui é imutável, mas mudan
 **D12. Hanja como grafia oficial nos visuais** — caracteres chineses clássicos (甲乙丙…) em vez de hangul nos elementos gráficos: autêntico (carimbos e mapas tradicionais usam hanja) e compatível com as fontes disponíveis.
 
 **D13. Processo visual** — visual primeiro, documentação depois: DIRECAO_DE_ARTE.md será escrita quando o visual for aprovado página a página, para evitar retrabalho.
+
+## 19/07/2026 — PDF v5 parametrizado
+
+**D14. `build_pdf.py` v5 aceita qualquer mapa** — a tarefa nº1 pendente foi concluída: o gerador do Premium (`app/pdf/premium_v5/build_pdf.py`) deixou de ser hard-coded para o mapa do Ivã e passou a receber `entrada.json saida.pdf`, mesma interface do v4. Decisões de parametrização:
+- **Capítulos narrativos dinâmicos** — o texto de `relatorio` (escrito pelo LLM a partir de `relatorios/prompts/leitura_premium.md`) é dividido por `##`/`###` em capítulos que fluem com paginação automática (inclusive quebra NO MEIO de um parágrafo se precisar) — o número de páginas do relatório deixou de ser fixo em 18.
+- **"Resumo de bolso" e nota final são parseados do relatório** (regex em `**Label:** valor` sob o heading `### ✦ ... 4 linhas`), com fallback 100% derivado do JSON do motor (Mestre do Dia, yongsin, elemento dominante, ciclo atual) quando o relatório ainda não existe ou não segue o padrão — a página de síntese e o disclaimer final nunca ficam vazios.
+- **Pilares e ciclos continuam data-driven a partir do JSON do motor** (não do texto livre do LLM), inclusive com 3 colunas quando a hora é desconhecida — mais confiável que tentar extrair datas de prosa.
+- **Fonte hanja**: trocada a CID `HeiseiMin-W3` (não embutida) por TTF real, busca por SO (`malgun.ttf` no Windows, `DroidSansFallbackFull`/Noto no Linux — `_cjk_candidates()` em build_pdf.py); se nenhuma for encontrada, os glifos hanja são omitidos (degradação graciosa, nunca quebra o PDF). **Atenção**: no Linux de teste deste sandbox, a Noto Serif/Sans CJK instalada é CFF (PostScript) e o `reportlab` só lê glifos TrueType puros — por isso caiu para o Droid, que cobre hanja mas não hangul. No Windows do Ivã, `malgun.ttf` é TrueType puro e cobre os dois — não deve reproduzir esse limite.
+- **Última página**: reincluídos a frase "Recomendamos a reanálise da sua leitura em cerca de um ano." e o selo vermelho 四柱 (tinham sido perdidos na reconstrução do v5).
+- **Título de capítulo** com fonte que encolhe automaticamente e cai para 2 linhas se o título do LLM for muito comprido — nunca vaza a margem.
+- Testado com o mapa real do Ivã (fidelidade ao v5 original), um mapa sintético (hora desconhecida, outro Mestre do Dia, sem relatório) e via `/pdf` do `server.mjs` fim-a-fim com o motor real.
+- `app/server.mjs` agora chama `pdf/premium_v5/build_pdf.py` quando `produto === 'premium'` e mantém `pdf/gerar_pdf.py` (v4) para o essencial.
+
+Pendência que PERMANECE aberta (não fazia parte da tarefa nº1, mas ficou visível): o PDF do produto Essencial ainda não tem visual v5 (item já listado nas "Demais pendências" do CONTINUIDADE.md).
+
