@@ -1,6 +1,8 @@
 # SAJU Brasil
 
-Base técnica para um aplicativo de leitura de Saju (사주, Quatro Pilares do Destino) individual e sinastria (궁합, gunghap), adaptado para usuários no Brasil.
+> **🤖 Para IAs continuando este trabalho: leia `CONTINUIDADE.md` PRIMEIRO.** Ele contém o estado do projeto, as regras invioláveis da marca, a tarefa pendente prioritária e a ordem de leitura dos documentos. Cada pasta tem seu próprio README.
+
+Empresa digital de relatórios de autoconhecimento baseados no Saju (사주, Quatro Pilares do Destino) e sinastria (궁합, gunghap), adaptados para o público brasileiro. Dois produtos prontos: Leitura Individual (R$ 47) e Leitura Premium (R$ 197).
 
 ## O que há neste repositório
 

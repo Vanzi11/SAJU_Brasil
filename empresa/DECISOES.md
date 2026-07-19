@@ -26,3 +26,15 @@ Decisões tomadas em conjunto (Ivã + Claude). Nada aqui é imutável, mas mudan
 - Política de reembolso, LGPD e transparência de IA no formulário (obrigatório antes do lançamento).
 - Meta de validação concreta (sugestão: X vendas em 60 dias com R$ 500–1.000 de tráfego).
 - EMPRESA.md v1.1 consolidando tudo isso.
+
+## 19/07/2026 (madrugada) — Direção de arte
+
+**D9. Direção de arte "Livraria de Seul"** — aplicada primeiro SOMENTE ao Premium (essencial e sinastria herdam depois). Paleta: marfim, roxo profundo, dourado fosco, cinza quente + selo vermelho (dojang 四柱). Moldura finíssima com marcas de canto, pilares como cartas, elementos como círculos de tinta, ilustrações em traço fino por elemento (montanha/bambu/ondas/sol/lua), páginas-respiro com frase única, página final contemplativa fechada no yongsin. Proibições mantidas: nada de galáxia, mandala, cristal, tarô.
+
+**D10. Grid, não caos** — em vez de "nunca repetir layout": 5 templates de página (cheia, dividida, destaque, frase, card) alternados com ritmo. Texturas raster de papel: adiadas (peso de arquivo/risco Canva). Pinceladas reais: futuro investimento em arte comissionada (10 mestres + 5 elementos), pós-validação.
+
+**D11. Sinastria bicolor (futuro)** — identidade por tipo de relação: selo/acentos VERMELHOS para amorosa, DOURADOS para societária/negócios. Registrado para a fase da sinastria.
+
+**D12. Hanja como grafia oficial nos visuais** — caracteres chineses clássicos (甲乙丙…) em vez de hangul nos elementos gráficos: autêntico (carimbos e mapas tradicionais usam hanja) e compatível com as fontes disponíveis.
+
+**D13. Processo visual** — visual primeiro, documentação depois: DIRECAO_DE_ARTE.md será escrita quando o visual for aprovado página a página, para evitar retrabalho.
