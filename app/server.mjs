@@ -15,7 +15,9 @@
 process.env.TZ = 'Asia/Seoul'; // requisito do motor (ver docs/FASE1_FUSO_BRASIL.md)
 
 import { createServer } from 'http';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync, readFileSync as lerArquivo, unlinkSync } from 'fs';
+import { spawn } from 'child_process';
+import { tmpdir } from 'os';
 import { dirname, join } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
@@ -161,6 +163,33 @@ const server = createServer(async (req, res) => {
       const saju = calculateSaju(b.data, b.hora, 'solar', false, b.sexo, b.cidade);
       const alvo = b.alvo ?? new Date().toISOString().slice(0, 10);
       return json(res, 200, { diaria: traduzirDiaria(getDailyFortune(saju, alvo)) });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/pdf') {
+      const b = await lerBody(req);
+      if (!b.data || !b.cidade || !b.sexo) return json(res, 400, { erro: 'Campos obrigatórios: data, cidade, sexo' });
+      const { leitura } = montarLeitura(b);
+      const premium = b.produto === 'premium';
+      const idade = new Date().getFullYear() - parseInt(b.data.slice(0, 4), 10);
+      const dados = { nome: b.nome || undefined, idadeAproximada: idade, ...leitura };
+      if (premium && b.tipoSanguineo) dados.tipoSanguineo = b.tipoSanguineo;
+      let relatorio = b.relatorio ?? null; // texto pronto pode ser enviado (fluxo com revisão humana)
+      if (!relatorio && b.gerarRelatorio) {
+        relatorio = await gerarRelatorioLLM(premium ? promptPremium : promptIndividual, montarUser(dados));
+      }
+      const entrada = join(tmpdir(), `saju_pdf_${Date.now()}.json`);
+      const saida = join(tmpdir(), `saju_pdf_${Date.now()}.pdf`);
+      writeFileSync(entrada, JSON.stringify({ produto: premium ? 'premium' : 'essencial', nome: b.nome || null, idadeAproximada: idade, leitura, relatorio }));
+      const py = process.platform === 'win32' ? 'python' : 'python3';
+      await new Promise((ok, ruim) => {
+        const pr = spawn(py, [join(HERE, 'pdf/gerar_pdf.py'), entrada, saida]);
+        let err = ''; pr.stderr.on('data', d => err += d);
+        pr.on('close', cod => cod === 0 ? ok() : ruim(new Error('gerar_pdf: ' + err.slice(0, 400))));
+      });
+      const pdf = lerArquivo(saida);
+      try { unlinkSync(entrada); unlinkSync(saida); } catch {}
+      res.writeHead(200, { 'content-type': 'application/pdf', 'content-disposition': 'attachment; filename="leitura-saju.pdf"' });
+      return res.end(pdf);
     }
 
     return json(res, 404, { erro: 'Rota não encontrada' });

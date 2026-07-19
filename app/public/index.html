@@ -105,11 +105,27 @@
   <div class="acoes-relatorio oculto" id="acoes">
     <button onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
     <button onclick="document.getElementById('cru').classList.toggle('oculto')">Ver JSON técnico</button>
+    <button id="btn-pdf" class="oculto" onclick="baixarPdf()">📄 Baixar PDF diagramado</button>
   </div>
   <pre id="cru" class="oculto"></pre>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
+let ultimoCorpoLeitura = null, ultimoRelatorio = null;
+async function baixarPdf(){
+  const btn = $('btn-pdf'); btn.disabled = true; btn.textContent = '⏳ Gerando PDF…';
+  try {
+    const corpo = { ...ultimoCorpoLeitura, relatorio: ultimoRelatorio };
+    const r = await fetch('/pdf', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(corpo) });
+    if (!r.ok) throw new Error((await r.json()).erro || r.status);
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'leitura-saju' + (ultimoCorpoLeitura.nome ? '-' + ultimoCorpoLeitura.nome.toLowerCase().replace(/\s+/g,'-') : '') + '.pdf';
+    a.click();
+  } catch(e) { alert('Erro ao gerar PDF: ' + e.message); }
+  btn.disabled = false; btn.textContent = '📄 Baixar PDF diagramado';
+}
 const abas = document.querySelectorAll('.abas button');
 abas.forEach(b => b.onclick = () => {
   abas.forEach(x => x.classList.remove('ativa')); b.classList.add('ativa');
@@ -190,8 +206,11 @@ function avisoLLM(j, quisNarrativo){
 $('f-leitura').onsubmit = async e => { e.preventDefault();
   const f = new FormData(e.target);
   const quer = f.get('llm') === 'on';
-  const j = await postar('/leitura', { nome:f.get('nome')||undefined, data:f.get('data'), hora:f.get('hora')||undefined, cidade:f.get('cidade'), sexo:f.get('sexo'), produto:f.get('produto'), gerarRelatorio: quer });
+  ultimoCorpoLeitura = { nome:f.get('nome')||undefined, data:f.get('data'), hora:f.get('hora')||undefined, cidade:f.get('cidade'), sexo:f.get('sexo'), produto:f.get('produto') };
+  const j = await postar('/leitura', { ...ultimoCorpoLeitura, gerarRelatorio: quer });
   if (!j) return;
+  ultimoRelatorio = j.relatorio || null;
+  $('btn-pdf').classList.remove('oculto');
   let h = estruturaLeitura('Leitura de Saju', j.leitura, f.get('nome'));
   if (j.relatorio) h += '<hr>' + md(j.relatorio);
   h += avisoLLM(j, quer);
