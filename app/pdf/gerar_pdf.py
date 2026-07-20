@@ -17,16 +17,17 @@ from reportlab.pdfbase.ttfonts import TTFont
 from pypdf import PdfReader, PdfWriter
 
 W, H = A4
-MARFIM   = HexColor('#f7f3ea')
+MARFIM   = HexColor('#f7f3ea')   # cream do Premium (não usado aqui — Essencial é fundo branco)
 MARFIM2  = HexColor('#f2ede1')
-ROXO     = HexColor('#33254f')   # roxo profundo
-ROXO_MED = HexColor('#5a4a7d')
-LAVANDA  = HexColor('#b9aed0')
+BRANCO   = HexColor('#fdfcf9')   # fundo da Edição Essencial — diferencia do cream ornamentado do Premium
+ROXO     = HexColor('#242a46')   # navy profundo — identidade própria da Essencial (Premium é roxo/plum)
+ROXO_MED = HexColor('#49527a')
+LAVANDA  = HexColor('#aab3cf')
 DOURADO  = HexColor('#a8894a')
 DOURADO2 = HexColor('#c4aa6e')
 CINZA    = HexColor('#6e6459')   # cinza quente
-TXT      = HexColor('#2b2433')
-SELO     = HexColor('#a63a2b')   # vermelho de carimbo
+TXT      = HexColor('#22242f')
+SELO     = HexColor('#a63a2b')   # vermelho de carimbo (não usado na capa da Essencial)
 COR_ELEM = {'Madeira': HexColor('#647d5c'), 'Fogo': HexColor('#a35c4b'),
             'Terra': HexColor('#b19458'), 'Metal': HexColor('#847f79'), 'Água': HexColor('#5b7186')}
 
@@ -81,19 +82,37 @@ def draw_misto(c, x, y, texto, fonte, tam, align='l'):
     return total
 
 # ---------- elementos de identidade ----------
-def fundo(c, cor=MARFIM):
+def fundo(c, cor=BRANCO):
     c.setFillColor(cor); c.rect(0, 0, W, H, stroke=0, fill=1)
 
 def moldura(c):
-    """Moldura finíssima dourada com marcas de canto — assinatura editorial."""
-    m = 30
-    c.setStrokeColor(DOURADO2); c.setLineWidth(0.5)
-    c.rect(m, m, W-2*m, H-2*m, stroke=1, fill=0)
-    c.setLineWidth(1.1)
-    t = 14
-    for (x, y, dx, dy) in [(m, H-m, 1, 0), (m, H-m, 0, -1), (W-m, H-m, -1, 0), (W-m, H-m, 0, -1),
-                            (m, m, 1, 0), (m, m, 0, 1), (W-m, m, -1, 0), (W-m, m, 0, 1)]:
-        c.line(x, y, x + dx*t, y + dy*t)
+    """Edição Essencial: sem moldura ornamentada de propósito — o branco da página
+    já é o que diferencia do cream com cantos dourados do Premium (pedido do Ivã, item 3)."""
+    pass
+
+def rastreado(t):
+    """Letter-spacing manual pra rótulos pequenos em caixa-alta (o reportlab não faz tracking nativo)."""
+    return ' '.join(list(t))
+
+def quebrar_linhas(texto, fonte, tam, max_w, max_linhas=None):
+    palavras = texto.split(' ')
+    linhas, atual = [], ''
+    for p in palavras:
+        teste = (atual + ' ' + p).strip()
+        if pdfmetrics.stringWidth(teste, fonte, tam) <= max_w or not atual:
+            atual = teste
+        else:
+            linhas.append(atual); atual = p
+    if atual: linhas.append(atual)
+    return linhas[:max_linhas] if max_linhas else linhas
+
+def marca_hanja(c, x, y, texto='四柱', tam=15, cor=None, align='l'):
+    """Marca discreta em hanja — substitui o carimbo vermelho na capa/encerramento da Essencial."""
+    if not CJK_FONT: return
+    c.setFillColor(cor or DOURADO); c.setFont(CJK_FONT, tam)
+    w = pdfmetrics.stringWidth(texto, CJK_FONT, tam)
+    xx = x - w if align == 'r' else (x - w/2 if align == 'c' else x)
+    c.drawString(xx, y, texto)
 
 def selo(c, cx, cy, lado=38, texto='四柱'):
     """Carimbo vermelho tradicional (dojang)."""
@@ -192,15 +211,20 @@ def linha_dourada(c, y, larg=120):
     c.line(W/2-larg/2, y, W/2+larg/2, y)
     c.setFillColor(DOURADO); c.circle(W/2, y, 1.6, stroke=0, fill=1)
 
-def cabecalho(c, texto, sub=None):
+def cabecalho(c, eyebrow, headline):
+    """Estilo editorial da Essencial: rótulo pequeno (categoria) acima, título grande
+    em itálico serifado abaixo — inverte o peso visual do Premium (que usa título bold reto)."""
     c.setFillColor(CINZA); c.setFont('Helvetica', 8.5)
     c.drawCentredString(W/2, H-64, 'S A J U   B R A S I L')
-    c.setFillColor(ROXO); c.setFont('Times-Bold', 25)
-    c.drawCentredString(W/2, H-100, texto)
-    linha_dourada(c, H-116)
-    if sub:
-        c.setFillColor(CINZA); c.setFont('Times-Italic', 10.5)
-        c.drawCentredString(W/2, H-134, sub)
+    c.setFillColor(DOURADO); c.setFont('Helvetica-Bold', 8.2)
+    c.drawCentredString(W/2, H-90, rastreado(eyebrow.upper()))
+    linhas = quebrar_linhas(headline, 'Times-Italic', 22, W-220, max_linhas=2)
+    c.setFillColor(ROXO); c.setFont('Times-Italic', 22)
+    y = H-122
+    for ln in linhas:
+        c.drawCentredString(W/2, y, ln)
+        y -= 27
+    linha_dourada(c, y - 3)
 
 FRASES_MESTRE = {
     'Gap': 'O carvalho não pede licença para crescer.',
@@ -261,14 +285,26 @@ def pagina_capa(c, dados):
     premium = dados.get('produto') == 'premium'
     c.setFillColor(CINZA); c.setFont('Helvetica', 9.5)
     c.drawCentredString(W/2, H-90, 'S A J U   B R A S I L')
+    if not premium:
+        marca_hanja(c, W-70, H-95, tam=15, align='r')
     linha_dourada(c, H-104, 60)
-    mk = mestre_chave(l)
-    if mk and CJK_FONT:
-        c.setFillColor(HexColor('#e7e0d0'))
-        c.setFont(CJK_FONT, 300)
-        c.drawCentredString(W/2, H/2-70, HANJA_MESTRE[mk])
-    c.setFillColor(ROXO); c.setFont('Times-Bold', 30)
-    c.drawCentredString(W/2, H-260, 'Leitura Personalizada Premium' if premium else 'Sua Leitura de Saju')
+    if premium:
+        mk = mestre_chave(l)
+        if mk and CJK_FONT:
+            c.setFillColor(HexColor('#e7e0d0'))
+            c.setFont(CJK_FONT, 300)
+            c.drawCentredString(W/2, H/2-70, HANJA_MESTRE[mk])
+    else:
+        c.setFillColor(DOURADO); c.setFont('Helvetica-Bold', 9)
+        c.drawCentredString(W/2, H-172, rastreado('EDIÇÃO ESSENCIAL'))
+    c.setFillColor(ROXO)
+    if premium:
+        c.setFont('Times-Bold', 30)
+        c.drawCentredString(W/2, H-260, 'Leitura Personalizada Premium')
+    else:
+        c.setFont('Times-Italic', 30)
+        c.drawCentredString(W/2, H-224, 'Leitura Personalizada')
+        c.drawCentredString(W/2, H-258, 'Essencial')
     c.setFillColor(CINZA); c.setFont('Times-Italic', 12)
     c.drawCentredString(W/2, H-284, 'um retrato dos seus padrões, pela tradição coreana dos Quatro Pilares')
     if nome:
@@ -279,7 +315,8 @@ def pagina_capa(c, dados):
     c.drawCentredString(W/2, 228, f"{'/'.join(reversed(n['data'].split('-')))} às {n['hora']} · {n['cidade']}")
     c.setFillColor(ROXO_MED)
     draw_misto(c, W/2, 200, f"Mestre do Dia · {l.get('mestreDoDia','')}", 'Times-Roman', 12, align='c')
-    selo(c, W/2, 140, 34)
+    if premium:
+        selo(c, W/2, 140, 34)
     c.setFillColor(CINZA); c.setFont('Times-Italic', 10.5)
     c.drawCentredString(W/2, 92, '"Não é sobre prever sua vida — é sobre entender seus padrões para decidir melhor."')
     numero(c, mostrar=False)
@@ -480,8 +517,14 @@ def pagina_card_final(c, dados):
     c.drawCentredString(W/2, H/2+64, 'Seu Saju em quatro linhas')
     linha_dourada(c, H/2+48, 70)
     linhas = [f"Mestre do Dia · {l.get('mestreDoDia','')}"]
+    premium = dados.get('produto') == 'premium'
     pv = l.get('padraoDeVida') or {}
-    if pv: linhas.append(f"Padrão de vida · {pv.get('nome','')}")
+    # nome técnico do padrão de vida (ex.: "Padrão do Deus do Alimento") é jargão —
+    # só pode aparecer por nome no Premium; no produto de entrada, usamos a essência em linguagem simples
+    if pv and premium:
+        linhas.append(f"Padrão de vida · {pv.get('nome','')}")
+    elif pv and pv.get('essencia'):
+        linhas.append(f"Traço central · {pv['essencia']}")
     yons = l.get('yongsin') or {}
     if yons: linhas.append(f"Elemento de equilíbrio · {yons.get('elementoPrincipal','')}")
     dom = ', '.join(l['elementos'].get('dominantes') or [])
@@ -515,10 +558,10 @@ CADERNO = [
         'Leia sem pressa, de preferência num momento só seu. Marque o que fizer sentido — e também o que incomodar: costuma ser onde mora o crescimento.'])
 ]
 
-def paginas_caderno(c):
-    for titulo, subt, pars in CADERNO:
+def paginas_caderno(c, itens=None):
+    for titulo, subt, pars in (itens if itens is not None else CADERNO):
         fundo(c); moldura(c)
-        cabecalho(c, titulo, subt)
+        cabecalho(c, subt, titulo)
         y = H - 190
         estilo = ParagraphStyle('cad', fontName='Times-Roman', fontSize=11.5, leading=19,
                                 textColor=TXT, alignment=TA_JUSTIFY)
@@ -568,6 +611,51 @@ def md_para_flowables(md_texto):
                 flow.append(Paragraph(inline(ln), estilos['p']))
     return flow
 
+def extrair_secoes_especiais(md):
+    """Separa Síntese (+ resumo de bolso aninhado) e Nota final do corpo corrido —
+    a Essencial dá página própria pra cada uma (pedido do Ivã, item 4), em vez de
+    deixá-las fluindo junto com o resto do texto no meio da paginação dinâmica."""
+    blocos = re.split(r'(?m)^##\s+', md.strip())
+    preamb, blocos = blocos[0], blocos[1:]
+    corpo, sintese_txt, resumo_pares, nota_txt = [], '', [], ''
+    for b in blocos:
+        partes_titulo = b.split('\n', 1)
+        titulo = partes_titulo[0].strip()
+        resto = partes_titulo[1] if len(partes_titulo) > 1 else ''
+        tl = titulo.lower()
+        if 'sintese' in tl or 'síntese' in tl:
+            sub = re.split(r'(?m)^###\s+', resto)
+            sintese_txt = sub[0].strip()
+            if len(sub) > 1:
+                for ln in sub[1].split('\n'):
+                    m = re.match(r'\*\*(.+?):\*\*\s*(.+)', ln.strip())
+                    if m: resumo_pares.append((m.group(1).strip(), m.group(2).strip()))
+        elif 'resumo' in tl or 'bolso' in tl or '4 linhas' in tl or 'poucas linhas' in tl:
+            for ln in resto.split('\n'):
+                m = re.match(r'\*\*(.+?):\*\*\s*(.+)', ln.strip())
+                if m: resumo_pares.append((m.group(1).strip(), m.group(2).strip()))
+        elif 'nota final' in tl or 'disclaimer' in tl or tl == 'nota':
+            nota_txt = resto.strip()
+        else:
+            corpo.append('## ' + b)
+    corpo_md = (preamb + '\n\n' if preamb.strip() else '') + '\n\n'.join(corpo)
+    return corpo_md, sintese_txt, resumo_pares, nota_txt
+
+def linha_editorial(c, x, y, largura, label, valor, tam_label=8.2, tam_valor=12.5):
+    """Uma linha rótulo-pequeno / valor-itálico com friso fino embaixo — o novo visual
+    do resumo final (pedido do Ivã, item 5: 'tá muito simples')."""
+    c.setFillColor(DOURADO); c.setFont('Helvetica-Bold', tam_label)
+    c.drawString(x, y, rastreado(label.upper()))
+    linhas = quebrar_linhas(valor, 'Times-Italic', tam_valor, largura)
+    c.setFillColor(ROXO); c.setFont('Times-Italic', tam_valor)
+    yy = y - 18
+    for ln in linhas:
+        c.drawString(x, yy, ln)
+        yy -= tam_valor + 5
+    c.setStrokeColor(HexColor('#e3ddcd')); c.setLineWidth(0.5)
+    c.line(x, yy - 3, x + largura, yy - 3)
+    return yy - 24
+
 def pdf_texto(md_texto, nome):
     buf = io.BytesIO()
     def fundo_pg(canv, doc):
@@ -606,6 +694,89 @@ def pagina_contemplativa(c, dados):
     numero(c)
     c.showPage()
 
+def pagina_sintese(c, dados, texto, resumo_pares):
+    """Folha própria pra Síntese + resumo de bolso — separada do corpo corrido (item 4)."""
+    fundo(c); moldura(c)
+    nome = dados.get('nome') or ''
+    c.setFillColor(CINZA); c.setFont('Helvetica', 8.5)
+    c.drawCentredString(W/2, H-64, 'S A J U   B R A S I L')
+    c.setFillColor(DOURADO); c.setFont('Helvetica-Bold', 8.2)
+    c.drawCentredString(W/2, H-90, rastreado('SÍNTESE'))
+    c.setFillColor(ROXO); c.setFont('Times-Italic', 22)
+    c.drawCentredString(W/2, H-122, 'O que fica, no fim das contas')
+    linha_dourada(c, H-138, 60)
+    y = H-186
+    if texto:
+        corpo = texto
+        if CJK_FONT: corpo = CJK_RE.sub(lambda m: f'<font name="CJK">{m.group(0)}</font>', corpo)
+        else: corpo = limpar_cjk(corpo)
+        estilo = ParagraphStyle('sint', fontName='Times-Roman', fontSize=11.8, leading=19.5,
+                                textColor=TXT, alignment=TA_JUSTIFY)
+        p = Paragraph(corpo, estilo)
+        wp, hp = p.wrap(W-220, 380)
+        p.drawOn(c, 110, y-hp)
+        y -= hp + 42
+    if resumo_pares:
+        c.setFillColor(DOURADO); c.setFont('Helvetica-Bold', 8)
+        c.drawString(110, y, rastreado('✦ SEU SAJU EM POUCAS LINHAS'))
+        y -= 28
+        for label, valor in resumo_pares[:4]:
+            y = linha_editorial(c, 110, y, W-220, label, valor)
+    if nome:
+        c.setFillColor(CINZA); c.setFont('Times-Italic', 9.5)
+        c.drawCentredString(W/2, 56, nome)
+    numero(c)
+    c.showPage()
+
+def pagina_nota(c, dados, texto):
+    """Folha própria pra Nota final — separada da Síntese (item 4)."""
+    fundo(c); moldura(c)
+    texto = texto or ('Este relatório é uma ferramenta de autoconhecimento baseada na tradição coreana '
+                       'do Saju. Ele não substitui acompanhamento médico ou psicológico, e nenhum mapa '
+                       'decide por você: o caminho é sempre seu.')
+    if CJK_FONT: texto = CJK_RE.sub(lambda m: f'<font name="CJK">{m.group(0)}</font>', texto)
+    else: texto = limpar_cjk(texto)
+    c.setFillColor(DOURADO); c.setFont('Helvetica-Bold', 8.2)
+    c.drawCentredString(W/2, H/2+96, rastreado('NOTA'))
+    estilo = ParagraphStyle('nota', fontName='Times-Italic', fontSize=12.5, leading=20.5,
+                            textColor=ROXO_MED, alignment=TA_CENTER)
+    p = Paragraph(texto, estilo)
+    wp, hp = p.wrap(W-280, 300)
+    p.drawOn(c, 140, H/2+64-hp)
+    numero(c)
+    c.showPage()
+
+UPSELL_ITENS = [
+    'o bloqueio central do seu mapa — o padrão que mais te trava hoje, nomeado com precisão e cuidado',
+    'os dez arquétipos completos do seu mapa, nome técnico e tradução em comportamento',
+    'seus animais e suas estrelas (sinsais), cada um com instrução de uso',
+    'a jornada inteira pelos ciclos de década — o que passou, o presente em detalhe e o que vem a seguir',
+]
+
+def pagina_upsell(c, dados):
+    """Fecho com ar de 'quero saber mais': deixa claro que esta é a Essencial e existe
+    uma versão mais completa — pedido geral do Ivã, sem tom de venda pesada."""
+    fundo(c); moldura(c)
+    marca_hanja(c, W/2, H/2+206, tam=20, align='c')
+    c.setFillColor(ROXO); c.setFont('Times-Italic', 19)
+    c.drawCentredString(W/2, H/2+150, 'Isto foi a Edição Essencial')
+    c.drawCentredString(W/2, H/2+122, 'do seu mapa.')
+    linha_dourada(c, H/2+100, 60)
+    c.setFillColor(TXT); c.setFont('Times-Roman', 10.8)
+    c.drawCentredString(W/2, H/2+72, 'A Edição Premium aprofunda cada camada. Ela inclui, entre outras coisas:')
+    y = H/2 + 42
+    estilo = ParagraphStyle('ups', fontName='Times-Roman', fontSize=10, leading=15, textColor=TXT)
+    for item in UPSELL_ITENS:
+        p = Paragraph(item, estilo)
+        wp, hp = p.wrap(W-300, 60)
+        c.setFillColor(DOURADO); c.circle(126, y-4, 1.6, stroke=0, fill=1)
+        p.drawOn(c, 140, y-hp)
+        y -= hp + 13
+    c.setFillColor(ROXO_MED); c.setFont('Times-Italic', 10.5)
+    c.drawCentredString(W/2, y-14, 'saiba mais em sajubrasil.com.br')
+    numero(c)
+    c.showPage()
+
 def gerar(entrada, saida):
     PAG['n'] = 0
     dados = json.load(open(entrada, encoding='utf-8'))
@@ -613,11 +784,14 @@ def gerar(entrada, saida):
     nome = dados.get('nome') or ''
     fixo = io.BytesIO()
     c = rl_canvas.Canvas(fixo, pagesize=A4)
-    c.setTitle(('Leitura Premium — ' if premium else 'Leitura de Saju — ') + (nome or 'Saju Brasil'))
+    c.setTitle(('Leitura Premium — ' if premium else 'Leitura Essencial — ') + (nome or 'Saju Brasil'))
     pagina_capa(c, dados)
     if premium:
         paginas_caderno(c)
         pagina_frase(c, dados)
+    else:
+        # "Antes de ler o seu mapa" acompanha toda leitura Essencial, sempre como página 2 (item 2)
+        paginas_caderno(c, CADERNO[:1])
     pagina_pilares(c, dados)
     pagina_elementos(c, dados)
     if premium:
@@ -625,16 +799,31 @@ def gerar(entrada, saida):
         pagina_ciclos(c, dados)
     c.save(); fixo.seek(0)
     partes = [PdfReader(fixo)]
-    if dados.get('relatorio'):
-        parte_texto = PdfReader(pdf_texto(dados['relatorio'], nome))
+
+    relatorio_md = dados.get('relatorio') or ''
+    sintese_txt, resumo_pares, nota_txt = '', [], ''
+    if relatorio_md:
+        if premium:
+            corpo_md = relatorio_md
+        else:
+            corpo_md, sintese_txt, resumo_pares, nota_txt = extrair_secoes_especiais(relatorio_md)
+        parte_texto = PdfReader(pdf_texto(corpo_md, nome))
         partes.append(parte_texto)
         PAG['n'] += len(parte_texto.pages)
-    card = io.BytesIO()
-    c2 = rl_canvas.Canvas(card, pagesize=A4)
-    pagina_card_final(c2, dados)
-    if premium: pagina_contemplativa(c2, dados)
-    c2.save(); card.seek(0)
-    partes.append(PdfReader(card))
+
+    cauda = io.BytesIO()
+    c2 = rl_canvas.Canvas(cauda, pagesize=A4)
+    if premium:
+        pagina_card_final(c2, dados)
+        pagina_contemplativa(c2, dados)
+    else:
+        # Síntese e Nota final em folhas próprias, separadas do corpo corrido (item 4)
+        pagina_sintese(c2, dados, sintese_txt, resumo_pares)
+        pagina_nota(c2, dados, nota_txt)
+        pagina_upsell(c2, dados)
+    c2.save(); cauda.seek(0)
+    partes.append(PdfReader(cauda))
+
     w = PdfWriter()
     for parte in partes:
         for pg in parte.pages: w.add_page(pg)
