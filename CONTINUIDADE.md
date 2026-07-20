@@ -4,8 +4,9 @@ Você é a IA que assume a construção da **Saju Brasil** — empresa de relat�
 
 ## Ordem de leitura obrigatória
 
+0. `PROTOCOLO_DE_SESSAO.md` — as regras de trabalho de TODA sessão (abertura, registro de decisões, checklist de saída, commits). Não é opcional.
 1. Este arquivo inteiro.
-2. `empresa/EMPRESA.md` → `empresa/GUIA_DE_VOZ.md` → `empresa/DECISOES.md` (D1–D13) → `empresa/PESQUISA_MERCADO.md`
+2. `empresa/EMPRESA.md` → `empresa/GUIA_DE_VOZ.md` → `empresa/DECISOES.md` (TODAS as decisões, D1 em diante — o número cresce a cada sessão) → `empresa/PESQUISA_MERCADO.md`
 3. `relatorios/prompts/` (os 3 system prompts — ativos centrais)
 4. O README.md de cada pasta antes de mexer nela.
 
@@ -17,7 +18,7 @@ Você é a IA que assume a construção da **Saju Brasil** — empresa de relat�
 
 **Prompts dos relatórios** (`relatorios/prompts/`): voz aprovada (mulher madura, vivida e acolhedora; honestidade acolhedora; estrutura V3 com frases fixas da casa). O relatório-padrão de qualidade é `relatorios/exemplos/relatorio_iva_premium_demonstracao.md`.
 
-**Dois produtos prontos**: Leitura Individual (R$ 47, entrada) e Leitura Premium (R$ 197) — texto e cálculo 100%; PDF do Premium com visual aprovado (ver abaixo).
+**Dois produtos prontos DE PONTA A PONTA**: Edição Essencial (R$ 47, `app/pdf/gerar_pdf.py`, identidade própria — D21) e Leitura Premium (R$ 197, `app/pdf/premium_v5/build_pdf.py`, visual "livro de Seul" parametrizado — D14–D19). Ambos: cálculo + texto + PDF testados com dados reais.
 
 ## REGRAS INVIOLÁVEIS (a identidade da empresa)
 
@@ -36,7 +37,7 @@ Você é a IA que assume a construção da **Saju Brasil** — empresa de relat�
 
 ## Demais pendências (ordem sugerida)
 
-1. PDF do produto Essencial no visual v5 (hoje só existe no v4) — o mesmo motor de capítulos dinâmicos de `build_pdf.py` pode ser reaproveitado, só falta a versão mais enxuta do layout.
+1. ~~PDF do produto Essencial~~ — ✅ CONCLUÍDO (D21): redesenhado como "Edição Essencial" com identidade própria (fundo branco, navy, sem moldura, página de upsell), amostra `leitura_essencial_fagundes_1987_AMOSTRA_v2.pdf`.
 2. Sinastria: prompt pronto; falta PDF próprio (decisão D11: acentos VERMELHOS amorosa / DOURADOS societária).
 3. DIRECAO_DE_ARTE.md — escrever após Ivã aprovar o v5 parametrizado página a página (D13). Com a parametrização pronta, dá pra gerar PDFs de mapas variados pra essa revisão.
 4. Pré-lançamento: política de reembolso, LGPD/consentimento no formulário, transparência de IA, meta de validação (ver Pendências em DECISOES.md).
@@ -54,4 +55,4 @@ Na UI: aba Leitura → dados + produto → gerar. Sem ANTHROPIC_API_KEY o texto 
 
 ## Estilo de colaboração com o Ivã
 
-Ele decide, você executa e critica com franqueza — ele gosta de discutir antes de executar mudanças grandes e de registrar decisões. Sempre: commits com mensagens claras ao fim de cada rodada (ele roda git no PowerShell — lembre que `&&` não funciona lá; comandos em linhas separadas). Apresente arquivos criados. Não gaste tokens dele com verificações visuais desnecessárias — ele mesmo revisa os PDFs e traz feedback.
+Ele decide, você executa e critica com franqueza — ele gosta de discutir antes de executar mudanças grandes e de registrar decisões. Sempre: commits com mensagens claras ao fim de cada rodada (ele roda git no PowerShell — lembre que `&&` não funciona lá; comandos em linhas separadas). ENTREGUE o bloco de commit pronto para copiar, com a mensagem já escrita entre aspas — sem isso os commits saem com mensagens vazias tipo "0" (já aconteceu 3×). Apresente arquivos criados. Não gaste tokens dele com verificações visuais desnecessárias — ele mesmo revisa os PDFs e traz feedback.
