@@ -16,7 +16,10 @@ pilares variável (3 quando a hora é desconhecida), qualquer Mestre do Dia,
 e o texto narrativo (`relatorio`, escrito pelo LLM a partir dos prompts em
 `relatorios/prompts/`) flui em capítulos com paginação automática.
 
-Dependências: pip install reportlab
+Dependências: pip install reportlab pillow
+(Pillow só é usada para tingir os ícones raster em assets/icons/ na cor do
+elemento; se não estiver instalada, o gerador cai de volta pros ícones
+vetoriais desenhados a mão, sem quebrar.)
 Fontes bundled em ./fonts/: Instrument Serif, Crimson Pro, Inter.
 Hanja: fonte TTF embutida (nunca a CID HeiseiMin-W3, que não embute no PDF) —
 malgun.ttf no Windows, DroidSansFallbackFull no Linux; ver _cjk_candidates().
@@ -25,9 +28,13 @@ degradação graciosa (nunca quebra a geração do PDF).
 """
 from __future__ import annotations
 import os, re, sys, json, math, platform
+from datetime import date
+from io import BytesIO
+from functools import lru_cache
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.colors import HexColor
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
@@ -37,6 +44,28 @@ from reportlab.pdfbase.ttfonts import TTFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FONT_DIR = os.path.join(HERE, "fonts")
+ICON_DIR = os.path.join(HERE, "assets", "icons")
+
+# Pedido do Ivã: o corpo do PDF estava pequeno demais pra ler confortavelmente
+# no celular. Em vez de tocar em ~80 chamadas de setFont() espalhadas pelo
+# arquivo (título, corpo, rótulos, rodapé...), a fonte inteira do documento
+# sobe uniformemente aqui, num só lugar: fazemos o patch de canvas.setFont e
+# de pdfmetrics.stringWidth (medida de largura de texto) para somarem o mesmo
+# delta - assim a medição de quebra de linha e o desenho continuam batendo
+# entre si (sem isso, o texto quebraria linha "cedo demais" e vazaria da
+# coluna). O leading (espaço entre linhas) dos parágrafos corridos é ajustado
+# à parte, dentro de draw_wrapped/draw_wrapped_paginated, pelo mesmo delta.
+FONT_BUMP = 3.5
+
+_orig_setFont = canvas.Canvas.setFont
+def _bumped_setFont(self, psfontname, size, leading=None):
+    return _orig_setFont(self, psfontname, size + FONT_BUMP, leading)
+canvas.Canvas.setFont = _bumped_setFont
+
+_orig_stringWidth = pdfmetrics.stringWidth
+def _bumped_stringWidth(text, fontName, fontSize, encoding='utf8'):
+    return _orig_stringWidth(text, fontName, fontSize + FONT_BUMP, encoding)
+pdfmetrics.stringWidth = _bumped_stringWidth
 
 PAGE_W, PAGE_H = A4  # 595.27 x 841.89 pt
 MARGIN_X = 92
@@ -60,6 +89,8 @@ COL_AGUA    = HexColor("#3b5a7a")
 ELEM_ORDER  = ["Madeira", "Fogo", "Terra", "Metal", "Água"]
 ELEM_CH     = {"Madeira": "木", "Fogo": "火", "Terra": "土", "Metal": "金", "Água": "水"}
 COR_ELEM    = {"Madeira": COL_MADEIRA, "Fogo": COL_FOGO, "Terra": COL_TERRA, "Metal": COL_METAL, "Água": COL_AGUA}
+HEX_ELEM    = {"Madeira": "#4a6b46", "Fogo": "#a03a2d", "Terra": "#b58b3a", "Metal": "#8a7f6a", "Água": "#3b5a7a"}
+HEX_INK     = "#2b2540"
 
 def _register_latin_fonts() -> None:
     def reg(name, fname):
@@ -126,16 +157,20 @@ def ganji_para_hanja(ganji: str) -> str:
 # Frases e hanja dos 10 Mestres do Dia (troncos celestes) — cobertura completa,
 # não é fallback: todo mapa tem exatamente um destes 10.
 FRASES_MESTRE = {
-    'Gap': 'O carvalho não pede licença para crescer.',
-    'Eul': 'A hera encontra caminho onde não há porta.',
-    'Byeong': 'O sol não escolhe o que iluminar.',
+    # Versão completa (pedido de revisão do Ivã, D19) - a página-respiro
+    # (page_breath_mestre) mostra a frase inteira, não mais o fragmento
+    # curto; o " — " é intencional: o layout já divide a frase em duas
+    # linhas centralizadas quando encontra esse separador.
+    'Gap': 'O carvalho não pede licença para crescer — cresce reto, porque essa é a sua natureza.',
+    'Eul': 'A hera encontra caminho onde não há porta — flexível por fora, decidida por dentro.',
+    'Byeong': 'O sol não escolhe o que iluminar — ilumina tudo, generoso e constante.',
     'Jeong': 'A vela não compete com o sol — ela acende o que está perto.',
-    'Mu': 'A montanha ama como montanha.',
-    'Gi': 'O jardim não tem pressa.',
-    'Gyeong': 'A espada se faz no fogo que ela não escolheu.',
-    'Sin': 'A joia é pequena porque é preciosa.',
-    'Im': 'O rio não discute com a pedra: contorna.',
-    'Gye': 'O orvalho chega em silêncio e alimenta tudo.',
+    'Mu': 'A montanha é firme, mas ama como montanha — não se move por pressão.',
+    'Gi': 'O jardim não tem pressa — cada estação chega na hora certa.',
+    'Gyeong': 'A espada se faz no fogo que ela não escolheu — e sai mais afiada por isso.',
+    'Sin': 'A joia é pequena porque é preciosa — não precisa de tamanho para valer.',
+    'Im': 'O rio não discute com a pedra — contorna, e chega ao mar do mesmo jeito.',
+    'Gye': 'O orvalho chega em silêncio e alimenta tudo — sem pedir para ser visto.',
 }
 HANJA_MESTRE = {'Gap':'甲','Eul':'乙','Byeong':'丙','Jeong':'丁','Mu':'戊','Gi':'己','Gyeong':'庚','Sin':'辛','Im':'壬','Gye':'癸'}
 
@@ -152,6 +187,20 @@ DISCLAIMER_DEFAULT = [
 # ----------------------------------------------------------------------------
 # Helpers gerais
 # ----------------------------------------------------------------------------
+
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F000-\U0001FAFF"
+    "\U00002600-\U000027BF"
+    "\U00002B00-\U00002BFF"
+    "\U0001F1E6-\U0001F1FF"
+    "\U0000FE0F"
+    "]", flags=re.UNICODE)
+
+def _strip_emoji(text: str) -> str:
+    """Remove emoji que nenhuma das fontes (Display/Body/Sans/CJK) sabe
+    desenhar — sem isso viram caixinhas vazias no PDF."""
+    return _EMOJI_RE.sub('', text)
 
 def is_cjk(ch: str) -> bool:
     cp = ord(ch)
@@ -199,14 +248,21 @@ def split_title(heading: str):
     return ' '.join(words[:cut]) + ' ', ' '.join(words[cut:])
 
 _STOPWORDS = {'o','a','os','as','de','do','da','dos','das','seu','sua','seus','suas','um','uma'}
-def derive_label(heading: str) -> str:
-    words = re.findall(r"[A-Za-zÀ-ÿ]+", heading or '')
+def derive_label(heading: str, avoid: set | None = None) -> str:
+    """Extrai a palavra-rótulo do título do capítulo (pro cabeçalho/rodapé
+    'V · ABERTURA'). `avoid` evita repetir um rótulo já usado por outra
+    página - os títulos que o prompt do LLM manda escrever (ex: 'Abertura
+    pessoal', 'A estrutura do seu mapa', 'Síntese final') colidem de propósito
+    em tema com as páginas fixas (I Abertura, III Estrutura, Síntese final) e
+    sem essa checagem o rodapé mostrava o mesmo rótulo duas vezes no livro."""
+    words = [w for w in re.findall(r"[A-Za-zÀ-ÿ]+", heading or '') if w.lower() not in _STOPWORDS]
     if not words:
         return 'leitura'
-    w = words[0]
-    if w.lower() in _STOPWORDS and len(words) > 1:
-        w = words[1]
-    return w
+    avoid = {a.lower() for a in (avoid or ())}
+    for w in words:
+        if w.lower() not in avoid:
+            return w
+    return words[0]
 
 def draw_chapter_header(c: canvas.Canvas, roman: str, label: str, title_main: str, title_italic: str, subtitle: str | None = None) -> None:
     x = MARGIN_X
@@ -246,7 +302,7 @@ def draw_chapter_header(c: canvas.Canvas, roman: str, label: str, title_main: st
         sub_y = y2 - size2 - 4 - 22
     if subtitle:
         c.setFillColor(MUTED); c.setFont("Body-It", 11)
-        c.drawString(x, sub_y, subtitle)
+        c.drawString(x, sub_y, _fit_line(subtitle, "Body-It", 11, max_w))
 
 # --- Texto estilizado com fallback CJK-aware ---------------------------------
 # Tokens de estilo: **negrito**, *itálico*; detecta hanja e troca de fonte.
@@ -285,7 +341,19 @@ def _atoms(text: str, style: str, base_family: str):
 def _measure(atoms, size):
     return sum(pdfmetrics.stringWidth(text, font, size) for text, font, _ in atoms)
 
+def _fit_line(text, font, size, max_w):
+    """Trunca uma linha (sem quebrar) pra caber em max_w, com reticências -
+    usado em legendas de cartão de largura fixa (ver page_archetypes), onde
+    truncar por caractere fixo quebrava com o bump de fonte (D17)."""
+    if pdfmetrics.stringWidth(text, font, size) <= max_w:
+        return text
+    t = text
+    while t and pdfmetrics.stringWidth(t + '…', font, size) > max_w:
+        t = t[:-1]
+    return (t.rstrip() + '…') if t else text
+
 def _wrap_lines(text: str, w: float, size: float, base_family: str):
+    text = _strip_emoji(text)
     styled_words = []
     for seg, style in _split_style(text):
         parts = re.split(r"(\s+)", seg)
@@ -329,6 +397,7 @@ def _draw_lines(c, lines, x, y, size, leading, color, align):
     return y
 
 def draw_wrapped(c, text, x, y, w, size=10.5, leading=15, base_family="Body", color=BODY, align="left"):
+    leading = leading + FONT_BUMP
     lines = _wrap_lines(text, w, size, base_family)
     for ln in lines:
         line_width = sum(_measure(a, size) for a, s, sp in ln)
@@ -348,6 +417,7 @@ def draw_wrapped(c, text, x, y, w, size=10.5, leading=15, base_family="Body", co
 def draw_wrapped_paginated(c, text, x, y, w, min_y, new_page_fn, size=10.5, leading=15, base_family="Body", color=BODY):
     """Como draw_wrapped, mas quebra a página NO MEIO do parágrafo se preciso —
     é o que garante que o layout aguenta textos de qualquer tamanho (tarefa 1c)."""
+    leading = leading + FONT_BUMP
     lines = _wrap_lines(text, w, size, base_family)
     i = 0
     while i < len(lines):
@@ -434,6 +504,276 @@ MOTIF_ELEM = {'Madeira': motif_bamboo, 'Terra': motif_mountain, 'Água': motif_w
               'Fogo': motif_mountain, 'Metal': motif_wave}
 
 # ----------------------------------------------------------------------------
+# Icones de traco fino - elementos (usados no quadro de animais) e os 12
+# animais dos ramos (pedido de revisao do Iva: trocar hanja por icones aqui).
+# ----------------------------------------------------------------------------
+
+def icon_gota(c, cx, cy, s=16, color=None):
+    color = color or COL_AGUA
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    p = c.beginPath()
+    p.moveTo(cx, cy + s)
+    p.curveTo(cx + s*0.75, cy + s*0.1, cx + s*0.55, cy - s*0.75, cx, cy - s*0.75)
+    p.curveTo(cx - s*0.55, cy - s*0.75, cx - s*0.75, cy + s*0.1, cx, cy + s)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_chama(c, cx, cy, s=16, color=None):
+    color = color or COL_FOGO
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    p = c.beginPath()
+    p.moveTo(cx, cy - s)
+    p.curveTo(cx + s*0.9, cy - s*0.2, cx + s*0.5, cy + s*0.5, cx, cy + s)
+    p.curveTo(cx - s*0.5, cy + s*0.5, cx - s*0.35, cy + s*0.05, cx - s*0.15, cy - s*0.05)
+    p.curveTo(cx - s*0.3, cy + s*0.25, cx, cy + s*0.15, cx, cy - s)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_folha(c, cx, cy, s=16, color=None):
+    color = color or COL_MADEIRA
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    p = c.beginPath()
+    p.moveTo(cx, cy - s)
+    p.curveTo(cx + s*0.9, cy - s*0.6, cx + s*0.9, cy + s*0.6, cx, cy + s)
+    p.curveTo(cx - s*0.9, cy + s*0.6, cx - s*0.9, cy - s*0.6, cx, cy - s)
+    c.drawPath(p, stroke=1, fill=0)
+    c.line(cx, cy - s*0.8, cx, cy + s*0.8)
+
+def icon_moeda(c, cx, cy, s=16, color=None):
+    color = color or COL_METAL
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.circle(cx, cy, s*0.85, stroke=1, fill=0)
+    q = s*0.28
+    c.rect(cx - q, cy - q, 2*q, 2*q, stroke=1, fill=0)
+
+def _icon_terra(c, cx, cy, s=16, color=None):
+    motif_mountain(c, cx, cy - s*0.3, s*0.9, color or COL_TERRA)
+
+ELEM_ICON = {'Água': icon_gota, 'Fogo': icon_chama, 'Madeira': icon_folha,
+             'Terra': _icon_terra, 'Metal': icon_moeda}
+
+# ----------------------------------------------------------------------------
+# Icones raster (Gemini) - traco fino ornamentado, gerados como mascaras
+# alpha-only (RGB=0, sem cor propria) em assets/icons/. Sao tingidos em tempo
+# de execucao na cor do elemento do ramo (mesma logica que ja colore os
+# icones vetoriais acima), entao um unico arquivo por animal/elemento serve
+# para qualquer combinacao de cor. Se o arquivo nao existir (ou Pillow nao
+# estiver instalado), cai de volta pros icones vetoriais desenhados a mao.
+try:
+    from PIL import Image as _PILImage
+    _PIL_OK = True
+except Exception:
+    _PIL_OK = False
+
+ANIMAL_ICON_FILES = {
+    'Rato': 'animal_rato', 'Boi': 'animal_boi', 'Tigre': 'animal_tigre',
+    'Coelho': 'animal_coelho', 'Dragão': 'animal_dragao', 'Serpente': 'animal_serpente',
+    'Cavalo': 'animal_cavalo', 'Cabra': 'animal_cabra', 'Macaco': 'animal_macaco',
+    'Galo': 'animal_galo', 'Cão': 'animal_cao', 'Porco': 'animal_porco',
+}
+ELEM_ICON_FILES = {
+    'Água': 'elem_agua', 'Fogo': 'elem_fogo', 'Madeira': 'elem_madeira',
+    'Terra': 'elem_terra', 'Metal': 'elem_metal',
+}
+
+@lru_cache(maxsize=256)
+def _tinted_icon_reader(mask_name: str, hexcolor: str):
+    """Carrega assets/icons/<mask_name>.png (mascara alpha-only) e devolve um
+    ImageReader tingido na cor pedida, cacheado por (arquivo, cor) - evita
+    reprocessar a mesma combinacao varias vezes no mesmo PDF."""
+    if not _PIL_OK:
+        return None
+    path = os.path.join(ICON_DIR, f"{mask_name}.png")
+    if not os.path.exists(path):
+        return None
+    try:
+        mask = _PILImage.open(path).convert("RGBA")
+        hexcolor = hexcolor.lstrip('#')
+        r, g, b = int(hexcolor[0:2], 16), int(hexcolor[2:4], 16), int(hexcolor[4:6], 16)
+        solid = _PILImage.new("RGBA", mask.size, (r, g, b, 0))
+        solid.putalpha(mask.split()[3])
+        buf = BytesIO()
+        solid.save(buf, format="PNG")
+        buf.seek(0)
+        return ImageReader(buf)
+    except Exception:
+        return None
+
+def draw_icon_png(c, mask_name, cx, cy, w, hexcolor):
+    """Desenha um icone raster centralizado em (cx, cy) com largura w pt,
+    preservando a proporcao original. Retorna True se desenhou, False se
+    precisa cair pro fallback vetorial."""
+    reader = _tinted_icon_reader(mask_name, hexcolor)
+    if reader is None:
+        return False
+    iw, ih = reader.getSize()
+    h = w * ih / iw
+    c.drawImage(reader, cx - w/2, cy - h/2, width=w, height=h, mask='auto')
+    return True
+
+def icon_rato(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.ellipse(cx - s*0.8, cy - s*0.5, cx + s*0.5, cy + s*0.5, stroke=1, fill=0)
+    c.circle(cx - s*0.55, cy + s*0.35, s*0.22, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx + s*0.5, cy)
+    p.curveTo(cx + s*1.1, cy + s*0.3, cx + s*1.3, cy - s*0.2, cx + s*1.4, cy - s*0.5)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_boi(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.ellipse(cx - s*0.55, cy - s*0.6, cx + s*0.55, cy + s*0.35, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx - s*0.5, cy + s*0.2)
+    p.curveTo(cx - s*0.9, cy + s*0.5, cx - s*0.9, cy + s*0.9, cx - s*0.5, cy + s*0.85)
+    c.drawPath(p, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx + s*0.5, cy + s*0.2)
+    p.curveTo(cx + s*0.9, cy + s*0.5, cx + s*0.9, cy + s*0.9, cx + s*0.5, cy + s*0.85)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_tigre(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.circle(cx, cy, s*0.6, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx - s*0.45, cy + s*0.45); p.lineTo(cx - s*0.65, cy + s*0.95); p.lineTo(cx - s*0.15, cy + s*0.65)
+    c.drawPath(p, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx + s*0.45, cy + s*0.45); p.lineTo(cx + s*0.65, cy + s*0.95); p.lineTo(cx + s*0.15, cy + s*0.65)
+    c.drawPath(p, stroke=1, fill=0)
+    for dx in (-0.2, 0, 0.22):
+        c.line(cx + s*dx - 3, cy - s*0.15, cx + s*dx + 3, cy - s*0.35)
+
+def icon_coelho(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.circle(cx, cy - s*0.25, s*0.5, stroke=1, fill=0)
+    c.ellipse(cx - s*0.35, cy + s*0.1, cx - s*0.1, cy + s*1.0, stroke=1, fill=0)
+    c.ellipse(cx + s*0.1, cy + s*0.1, cx + s*0.35, cy + s*1.0, stroke=1, fill=0)
+
+def icon_dragao(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0)
+    p = c.beginPath()
+    p.moveTo(cx - s*0.9, cy - s*0.5)
+    p.curveTo(cx - s*0.3, cy + s*0.6, cx + s*0.3, cy - s*0.6, cx + s*0.9, cy + s*0.5)
+    c.drawPath(p, stroke=1, fill=0)
+    c.line(cx - s*0.9, cy - s*0.5, cx - s*1.05, cy - s*0.85)
+    c.line(cx - s*0.9, cy - s*0.5, cx - s*0.65, cy - s*0.85)
+
+def icon_serpente(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.1)
+    p = c.beginPath()
+    p.moveTo(cx - s*0.7, cy + s*0.5)
+    p.curveTo(cx - s*0.1, cy + s*0.9, cx - s*0.1, cy + s*0.1, cx + s*0.4, cy)
+    p.curveTo(cx + s*0.8, cy - s*0.08, cx + s*0.8, cy - s*0.6, cx + s*0.5, cy - s*0.75)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_cavalo(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    p = c.beginPath()
+    p.moveTo(cx - s*0.3, cy - s*0.8)
+    p.curveTo(cx - s*0.55, cy - s*0.2, cx - s*0.5, cy + s*0.5, cx - s*0.15, cy + s*0.9)
+    p.lineTo(cx + s*0.15, cy + s*0.9)
+    p.curveTo(cx + s*0.35, cy + s*0.4, cx + s*0.5, cy, cx + s*0.35, cy - s*0.7)
+    p.lineTo(cx - s*0.3, cy - s*0.8)
+    c.drawPath(p, stroke=1, fill=0)
+    for dx, dy in [(0.05, 0.75), (0.15, 0.55), (0.22, 0.35)]:
+        c.line(cx + s*dx, cy + s*dy, cx + s*(dx+0.3), cy + s*(dy+0.1))
+
+def icon_cabra(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.ellipse(cx - s*0.4, cy - s*0.5, cx + s*0.4, cy + s*0.3, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx - s*0.3, cy + s*0.2)
+    p.curveTo(cx - s*0.7, cy + s*0.4, cx - s*0.8, cy + s*0.9, cx - s*0.55, cy + s)
+    c.drawPath(p, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx + s*0.3, cy + s*0.2)
+    p.curveTo(cx + s*0.7, cy + s*0.4, cx + s*0.8, cy + s*0.9, cx + s*0.55, cy + s)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_macaco(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.circle(cx, cy, s*0.55, stroke=1, fill=0)
+    c.circle(cx - s*0.55, cy + s*0.25, s*0.2, stroke=1, fill=0)
+    c.circle(cx + s*0.55, cy + s*0.25, s*0.2, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx + s*0.4, cy - s*0.4)
+    p.curveTo(cx + s*0.9, cy - s*0.7, cx + s*1.0, cy - s*1.2, cx + s*0.7, cy - s*1.3)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_galo(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.circle(cx, cy - s*0.1, s*0.45, stroke=1, fill=0)
+    for dx in (-0.15, 0.05, 0.25):
+        c.line(cx + s*dx, cy + s*0.3, cx + s*(dx-0.05), cy + s*0.65)
+    p = c.beginPath(); p.moveTo(cx + s*0.4, cy - s*0.15); p.lineTo(cx + s*0.75, cy - s*0.05); p.lineTo(cx + s*0.4, cy + s*0.05)
+    c.drawPath(p, stroke=1, fill=0)
+
+def icon_cao(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.circle(cx, cy, s*0.5, stroke=1, fill=0)
+    c.ellipse(cx - s*0.75, cy - s*0.1, cx - s*0.35, cy + s*0.6, stroke=1, fill=0)
+    c.ellipse(cx + s*0.35, cy - s*0.1, cx + s*0.75, cy + s*0.6, stroke=1, fill=0)
+
+def icon_porco(c, cx, cy, s=16, color=INK):
+    c.setStrokeColor(color); c.setLineWidth(1.0); c.setFillColor(IVORY)
+    c.circle(cx, cy, s*0.55, stroke=1, fill=0)
+    c.ellipse(cx - s*0.22, cy - s*0.5, cx + s*0.22, cy - s*0.2, stroke=1, fill=0)
+    c.circle(cx - s*0.1, cy - s*0.35, 1.3, stroke=0, fill=1)
+    c.circle(cx + s*0.1, cy - s*0.35, 1.3, stroke=0, fill=1)
+    p = c.beginPath(); p.moveTo(cx - s*0.4, cy + s*0.45); p.lineTo(cx - s*0.55, cy + s*0.75); p.lineTo(cx - s*0.2, cy + s*0.55)
+    c.drawPath(p, stroke=1, fill=0)
+    p = c.beginPath(); p.moveTo(cx + s*0.4, cy + s*0.45); p.lineTo(cx + s*0.55, cy + s*0.75); p.lineTo(cx + s*0.2, cy + s*0.55)
+    c.drawPath(p, stroke=1, fill=0)
+
+ANIMAL_ICONS = {
+    'Rato': icon_rato, 'Boi': icon_boi, 'Tigre': icon_tigre, 'Coelho': icon_coelho,
+    'Dragão': icon_dragao, 'Serpente': icon_serpente, 'Cavalo': icon_cavalo,
+    'Cabra': icon_cabra, 'Macaco': icon_macaco, 'Galo': icon_galo, 'Cão': icon_cao,
+    'Porco': icon_porco,
+}
+
+# Os dez arquetipos (dez deuses / 十神) - enumeracao fixa e completa (nao vem
+# do LLM: sao exatamente 10 possiveis, igual FRASES_MESTRE). Portado do
+# gerador v4 (app/pdf/gerar_pdf.py), que ja tinha esse quadro - o v5 original
+# nao tinha (pedido de revisao do Iva).
+ARQUETIPOS = [
+    ('RELAÇÕES DE IGUAL', [
+        ('Companheiro', '比肩', 'autonomia e irmandade', 'você funciona como referência solitária'),
+        ('Rival', '劫財', 'ousadia e competição', 'competição não te move')]),
+    ('EXPRESSÃO CRIATIVA', [
+        ('Deus do Alimento', '食神', 'criação serena e prazer', 'sua criação nasce de outra fonte'),
+        ('Oficial Ferido', '傷官', 'o olhar que vê o que está errado — e como melhorar', 'a crítica não é seu motor')]),
+    ('GERAÇÃO DE VALOR', [
+        ('Riqueza Indireta', '偏財', 'o caçador de oportunidades', 'oportunidade não é seu chamado natural'),
+        ('Riqueza Direta', '正財', 'renda estável e gestão', 'salário fixo não é seu caminho natural')]),
+    ('ORDEM E AUTORIDADE', [
+        ('Oficial Direto', '正官', 'ordem e responsabilidade', 'hierarquia não tem morada no seu mapa'),
+        ('Oficial Indireto (Sete Matanças)', '偏官', 'coragem sob pressão', 'pressão externa não te comanda')]),
+    ('SABER E AMPARO', [
+        ('Selo Direto', '正印', 'o amparo do conhecimento', 'seu saber vem da experiência'),
+        ('Selo Indireto', '偏印', 'intuição e caminhos alternativos', 'sua intuição atua discreta')]),
+]
+
+def pontos_intensidade(c, x, y, nivel, r=4.4, cor=ACCENT):
+    c.setFillColor(cor); c.setStrokeColor(cor); c.setLineWidth(0.8)
+    if nivel >= 2:
+        c.circle(x, y, r, stroke=0, fill=1); c.circle(x + 2*r + 4, y, r, stroke=0, fill=1); return
+    if nivel >= 1:
+        c.circle(x, y, r, stroke=0, fill=1); return
+    c.circle(x, y, r, stroke=1, fill=0)
+    c.wedge(x - r, y - r, x + r, y + r, 90, 180, stroke=0, fill=1)
+
+def _draw_mixed_line(c, x, y, text, base_font, size, color):
+    """Desenha uma linha (sem quebra) misturando latim e hanja, retorna a largura."""
+    text = _strip_emoji(text)
+    cx = x
+    for t, f, _s in _atoms(text, '', base_font):
+        c.setFont(f, size); c.setFillColor(color); c.drawString(cx, y, t)
+        cx += pdfmetrics.stringWidth(t, f, size)
+    return cx - x
+
+def _split_main_right(value: str):
+    """'Mu, a Montanha (Terra Yang) - guardiao leal...' -> (main, descritor).
+    O relatorio do LLM ja separa valor e descricao com '.' ou '-' (ver
+    relatorios/prompts/leitura_premium.md, secao Resumo de bolso)."""
+    for sep in (' · ', ' — '):
+        if sep in value:
+            i = value.index(sep)
+            return value[:i].strip(), value[i + len(sep):].strip()
+    return value.strip(), ''
+
+# ----------------------------------------------------------------------------
 # Leitura de dados / helpers de domínio
 # ----------------------------------------------------------------------------
 
@@ -456,10 +796,41 @@ def _pilar_parts(p):
     rh = re.search(r'\((.+?)\)', ramo)
     top_ch = th.group(1) if th else ''
     bot_ch = rh.group(1) if rh else ''
-    l1 = (tronco.split(' (')[0] + ' · ' + tronco.split('— ')[-1]) if tronco else ''
-    l2 = (ramo.split(' (')[0] + ' · ' + ramo.split('— ')[-1]) if ramo else ''
+    # "Tronco/Ramo" em vez de "Tronco do Ano/Ramo do Ano" - o cabeçalho da
+    # coluna (ANO/MÊS/DIA/HORA) já diz de qual pilar se trata; repetir
+    # deixava a legenda comprida demais pra caber nas 4 colunas.
+    l1 = ('Tronco · ' + tronco.split('— ')[-1]) if tronco else ''
+    l2 = ('Ramo · ' + ramo.split('— ')[-1]) if ramo else ''
     return top_ch, bot_ch, l1, l2
 
+def animal_do_ramo(p):
+    if not p:
+        return None
+    ramo = p.get('ramo') or ''
+    tail = ramo.split('— ')[-1] if '— ' in ramo else ''
+    animal = tail.split(',')[0].strip()
+    return animal or None
+
+def elemento_do_ramo(p):
+    if not p:
+        return None
+    ramo = p.get('ramo') or ''
+    tail = ramo.split('— ')[-1] if '— ' in ramo else ''
+    parts = tail.split(',')
+    if len(parts) > 1:
+        e = parts[1].strip()
+        return e if e in ELEM_ORDER else None
+    return None
+
+def elemento_do_tronco(p):
+    """Formato do tronco é 'Jeong (丁) — Fogo Yin' (sem vírgula, diferente do
+    ramo) - usado na página de estrutura/elementos (D19)."""
+    if not p:
+        return None
+    tronco = p.get('tronco') or ''
+    tail = tronco.split('— ')[-1] if '— ' in tronco else ''
+    e = tail.split(' ')[0].strip()
+    return e if e in ELEM_ORDER else None
 # ----------------------------------------------------------------------------
 # Parsing do relatório (markdown do LLM) em capítulos + resumo de bolso
 # ----------------------------------------------------------------------------
@@ -498,9 +869,25 @@ def _split_md_sections(md: str):
         out.append({'level': s['level'], 'heading': s['heading'], 'body': body})
     return out
 
+def _classify_chapter(heading_lower: str):
+    """Capítulos que ganham uma página de dados/gráfico própria ANTES da
+    prosa (pedido de revisão: 'para ele entender precisa desse gráfico
+    antes' — visão do todo antes do ponto a ponto)."""
+    if re.search(r'ciclo|década|o mapa do tempo', heading_lower):
+        return 'cycles'
+    if re.search(r'núcleo|arquétipo|dez deuses|dez arquétipos', heading_lower):
+        return 'archetypes'
+    if re.search(r'animal|estrela', heading_lower):
+        return 'animals'
+    if re.search(r'estrutura', heading_lower):
+        return 'structure'
+    return None
+
 def parse_relatorio(md: str):
     """-> (capitulos, resumo_rows, disclaimer_override)
-    capitulos: [{'heading': str|None, 'paragraphs': [str], 'is_cycles': bool}]
+    capitulos: [{'heading': str|None, 'paragraphs': [str], 'kind': str|None}]
+    'kind' ∈ {'cycles','archetypes','animals',None} — dispara a página de
+    dados correspondente antes da prosa (ver render_narrative).
     resumo_rows: [(label, valor)] extraído de '### ✦ ... 4 linhas' (ou similar)
     disclaimer_override: str|None (texto de nota final, se presente no relatório)
     """
@@ -534,13 +921,12 @@ def parse_relatorio(md: str):
         paras = _split_paragraphs(body)
         if not paras:
             continue
-        is_cycles = bool(re.search(r'ciclo|década|o mapa do tempo', low))
-        chapters.append({'heading': heading, 'paragraphs': paras, 'is_cycles': is_cycles})
+        chapters.append({'heading': heading, 'paragraphs': paras, 'kind': _classify_chapter(low)})
     if preamble:
         if chapters:
             chapters[0]['paragraphs'] = [preamble] + chapters[0]['paragraphs']
         else:
-            chapters.append({'heading': None, 'paragraphs': [preamble], 'is_cycles': False})
+            chapters.append({'heading': None, 'paragraphs': [preamble], 'kind': None})
     return chapters, resumo_rows, disclaimer
 
 # ----------------------------------------------------------------------------
@@ -597,6 +983,13 @@ def page_cover(c, dados):
     c.setFillColor(MUTED); c.setFont("Body-It", 10)
     c.drawCentredString(PAGE_W/2, 76, "não é sobre prever sua vida — é sobre entender seus padrões para decidir melhor")
 
+_MESES_PT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho',
+             'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
+
+def _data_por_extenso(d=None):
+    d = d or date.today()
+    return f"{d.day} de {_MESES_PT[d.month - 1]} de {d.year}"
+
 def page_colophon(c, dados):
     draw_bg(c)
     nome = dados.get('nome') or ''
@@ -608,14 +1001,18 @@ def page_colophon(c, dados):
     c.drawCentredString(PAGE_W/2, PAGE_H/2 + 20, "abra sem pressa.")
     c.drawCentredString(PAGE_W/2, PAGE_H/2 - 6, "este mapa é seu.")
     x = MARGIN_X; y = 160
+    max_w = PAGE_W - 2*MARGIN_X
     c.setFillColor(MUTED); c.setFont("Sans", 8)
     linhas = [f"EDIÇÃO {'PREMIUM' if produto == 'premium' else 'ESSENCIAL'} · V.5", "SAJU BRASIL"]
-    if nome: linhas.append(f"IMPRESSO PARA {nome.upper()}")
+    if nome: linhas.append(_fit_line(f"IMPRESSO PARA {nome.upper()}", "Sans", 8, max_w))
     for line in linhas:
         c.drawString(x, y, line); y -= 12
     hairline(c, x, y+4, x+40, y+4, MUTED)
     y -= 12
     c.drawString(x, y, "TIRAGEM ÚNICA")
+    y -= 14
+    c.setFillColor(MUTED); c.setFont("Sans-It", 8)
+    c.drawString(x, y, f"Tiragem única realizada em {_data_por_extenso()}")
 
 def page_intro(c, ctx):
     """Página educativa fixa (não depende do mapa) — 'antes de ler o seu mapa'."""
@@ -699,9 +1096,14 @@ def page_pillars(c, dados, ctx):
                 hairline(c, x_div, top_y - 148, x_div, top_y - 30, HAIRLINE)
             c.setFillColor(ACCENT); c.setLineWidth(0.6)
             c.line(cx - 14, top_y - 168, cx - 4, top_y - 168)
-            c.setFillColor(BODY); c.setFont("Sans", 8)
-            c.drawCentredString(cx, top_y - 180, l1)
-            c.drawCentredString(cx, top_y - 192, l2)
+            c.setFillColor(BODY)
+            max_w = col_w - 10  # respiro entre colunas - texto varia de tamanho por pilar
+            for txt, y_off in ((l1, 180), (l2, 192)):
+                fsz = 8.0
+                while fsz > 3.5 and pdfmetrics.stringWidth(txt, "Sans", fsz) > max_w:
+                    fsz -= 0.5
+                c.setFont("Sans", fsz)
+                c.drawCentredString(cx, top_y - y_off, txt)
         else:
             c.setFillColor(MUTED); c.setFont("Body-It", 9.5)
             c.drawCentredString(cx, top_y - 100, "hora desconhecida")
@@ -787,12 +1189,183 @@ def page_breath_mestre(c, dados, ctx):
         c.drawCentredString(PAGE_W/2, y - 70, f"{mk.upper()} · MESTRE DO DIA")
     draw_footer(c, "· respiro", ctx['page'])
 
-def page_cycles(c, dados, ctx, roman):
+def draw_running_head(c, roman, label):
+    """Cabeçalho leve para a página de PROSA que continua um capítulo cuja
+    abertura já foi outra página (gráfico/quadro) — sem repetir o título
+    grande, só a etiqueta do capítulo (ver render_narrative)."""
+    x = MARGIN_X; y = PAGE_H - 100
+    c.setFillColor(MUTED); c.setFont("Sans", 8)
+    c.drawString(x, y, f"{roman}  ·  {(label or '').upper()}")
+    c.setStrokeColor(ACCENT); c.setLineWidth(0.8)
+    c.line(x, y - 8, x + 60, y - 8)
+
+def page_archetypes(c, dados, ctx, roman, label="Núcleo"):
+    """Grade dos Dez Arquétipos (dez deuses) — existia no v4, faltava no v5
+    (pedido de revisão do Ivã: dar a visão do todo antes do texto)."""
+    draw_bg(c); draw_top_hanja(c, "心")
+    l = dados.get('leitura') or {}
+    nome = dados.get('nome') or ''
+    dist = (l.get('dezDeuses') or {}).get('distribuicao') or {}
+    draw_chapter_header(c, roman, label, "Os Dez", "Arquétipos",
+                        (nome + ' · ' if nome else '') + 'como cada energia se relaciona com o seu centro')
+    cw, ch, gapx, gapy = 240, 58, 22, 26
+    x0 = (PAGE_W - 2*cw - gapx)/2; y = PAGE_H - 300
+    for rotulo, par in ARQUETIPOS:
+        c.setFillColor(ACCENT); c.setFont("Sans", 7.5)
+        c.drawString(x0 + 2, y + 3, rotulo)
+        c.setStrokeColor(HAIRLINE); c.setLineWidth(0.4)
+        c.line(x0 + 2 + pdfmetrics.stringWidth(rotulo, "Sans", 7.5) + 8, y + 6, x0 + 2*cw + gapx, y + 6)
+        for j, (nomeA, hanja, desc_a, desc_x) in enumerate(par):
+            v = dist.get(nomeA, 0)
+            x = x0 + j*(cw + gapx); yc = y - ch
+            ativo = v > 0
+            c.setStrokeColor(INK if ativo else HAIRLINE); c.setLineWidth(0.9 if ativo else 0.5)
+            c.roundRect(x, yc, cw, ch, 4, stroke=1, fill=0)
+            if v >= 1.5:
+                c.setStrokeColor(ACCENT); c.setLineWidth(0.5)
+                c.roundRect(x + 3.5, yc + 3.5, cw - 7, ch - 7, 3, stroke=1, fill=0)
+            nome_curto = nomeA.replace(' (Sete Matanças)', '')
+            txt = f'{nome_curto}  {hanja}'
+            larg = _draw_mixed_line(c, x + 14, yc + ch - 21, txt, "Display" if ativo else "Body", 12, INK if ativo else MUTED)
+            if ativo:
+                pontos_intensidade(c, x + 14 + larg + 14, yc + ch - 16, 2 if v >= 1.5 else (1 if v >= 1 else 0.5))
+            c.setFillColor(MUTED if ativo else HexColor('#bdb4a4')); c.setFont("Sans", 7.8)
+            pref = 'DOMINANTE — ' if v >= 1.5 else ('presença leve — ' if 0 < v < 1 else ('' if ativo else 'ausente — '))
+            desc_full = pref + (desc_a if ativo else desc_x)
+            c.drawString(x + 14, yc + 13, _fit_line(desc_full, "Sans", 7.8, cw - 24))
+        y -= ch + gapy
+    itens = [(2, 'dominante'), (1, 'ativo'), (0.5, 'presença leve')]
+    larguras = []
+    for nv, rot in itens:
+        wdots = (4*4.4 + 4) if nv >= 2 else 2*4.4
+        larguras.append(wdots + 9 + pdfmetrics.stringWidth(rot, "Sans", 9))
+    sep = 30
+    xx = PAGE_W/2 - (sum(larguras) + sep*2)/2
+    for (nv, rot), lg in zip(itens, larguras):
+        pontos_intensidade(c, xx + 4.4, 90, nv, r=4.4)
+        wdots = (4*4.4 + 4) if nv >= 2 else 2*4.4
+        c.setFillColor(MUTED); c.setFont("Sans", 9)
+        c.drawString(xx + wdots + 9, 86, rot)
+        xx += lg + sep
+    c.setFillColor(MUTED); c.setFont("Body-It", 9.5)
+    c.drawCentredString(PAGE_W/2, 62, 'claro = ausente — e cada ausência também conta a sua história')
+    draw_footer(c, f"{roman.lower()} · {label.lower()}", ctx['page'])
+
+def page_structure_elements(c, dados, ctx, roman, label="Mapa"):
+    """Página híbrida entre 'Os Quatro Pilares' (grade de colunas por pilar)
+    e 'Seus Animais' (ícones raster grandes) - mas com foco nos elementos de
+    cada caractere: elemento do tronco em cima, elemento do ramo embaixo.
+    Abre o capítulo 'A estrutura do seu mapa' do LLM com uma visão do todo
+    antes da prosa (pedido de revisão do Ivã, D19)."""
+    draw_bg(c); draw_top_hanja(c, "構")
+    l = dados.get('leitura') or {}
+    draw_chapter_header(c, roman, label, "Seus elementos, ", "pilar a pilar",
+                        "cada caractere carrega um elemento — a matéria-prima da sua estrutura")
+    pilares = l.get('pilares') or {}
+    cols_defs = [pl for pl in PILAR_LABELS if pl[0] in pilares] or PILAR_LABELS
+    n = len(cols_defs)
+    top_y = PAGE_H - 300
+    col_w = (PAGE_W - 2*MARGIN_X) / n
+    ICON_SZ = 56
+    for i, (chave, plabel, sub) in enumerate(cols_defs):
+        p = pilares.get(chave)
+        cx = MARGIN_X + col_w*(i + 0.5)
+        c.setFillColor(ACCENT); c.setFont("Sans", 8)
+        c.drawCentredString(cx, top_y, plabel)
+        c.setFillColor(MUTED); c.setFont("Body-It", 8.5)
+        c.drawCentredString(cx, top_y - 12, sub)
+        elem_t = elemento_do_tronco(p)
+        elem_r = elemento_do_ramo(p)
+        if elem_t:
+            hexcol = HEX_ELEM.get(elem_t, HEX_INK)
+            mask = ELEM_ICON_FILES.get(elem_t)
+            drawn = draw_icon_png(c, mask, cx, top_y - 72, ICON_SZ, hexcol) if mask else False
+            if not drawn:
+                icon = ELEM_ICON.get(elem_t)
+                if icon:
+                    icon(c, cx, top_y - 72, 20, COR_ELEM.get(elem_t, INK))
+            c.setFillColor(MUTED); c.setFont("Sans", 8)
+            c.drawCentredString(cx, top_y - 114, elem_t.upper())
+        if i < n - 1:
+            x_div = MARGIN_X + col_w*(i + 1)
+            hairline(c, x_div, top_y - 260, x_div, top_y - 30, HAIRLINE)
+        if elem_r:
+            hexcol = HEX_ELEM.get(elem_r, HEX_INK)
+            mask = ELEM_ICON_FILES.get(elem_r)
+            drawn = draw_icon_png(c, mask, cx, top_y - 188, ICON_SZ, hexcol) if mask else False
+            if not drawn:
+                icon = ELEM_ICON.get(elem_r)
+                if icon:
+                    icon(c, cx, top_y - 188, 20, COR_ELEM.get(elem_r, INK))
+            c.setFillColor(MUTED); c.setFont("Sans", 8)
+            c.drawCentredString(cx, top_y - 230, elem_r.upper())
+    c.setFillColor(BODY); c.setFont("Body-It", 11)
+    c.drawCentredString(PAGE_W/2, 150, "Tronco em cima, ramo embaixo — dois elementos por pilar, oito ao todo.")
+    motif_seal(c, PAGE_W/2, 100, "四柱", 9)
+    draw_footer(c, f"{roman.lower()} · {label.lower()}", ctx['page'])
+
+def page_animals(c, dados, ctx, roman, label="Animais"):
+    """Quadro dos animais dos ramos, no mesmo estilo cartão da página de
+    Pilares — mas com ícones de traço fino no lugar do hanja (pedido de
+    revisão do Ivã: uma gota para Água, um cãozinho para Cão etc.)."""
+    draw_bg(c); draw_top_hanja(c, "獸")
+    l = dados.get('leitura') or {}
+    draw_chapter_header(c, roman, label, "Seus", "Animais",
+                        "os animais dos seus ramos — um retrato de temperamento")
+    pilares = l.get('pilares') or {}
+    cols_defs = [pl for pl in PILAR_LABELS if pl[0] in pilares] or PILAR_LABELS
+    n = len(cols_defs)
+    top_y = PAGE_H - 300
+    col_w = (PAGE_W - 2*MARGIN_X) / n
+    ICON_SZ = 62  # animal e elemento no mesmo tamanho, pedido do Ivã
+    for i, (chave, plabel, sub) in enumerate(cols_defs):
+        p = pilares.get(chave)
+        cx = MARGIN_X + col_w*(i + 0.5)
+        c.setFillColor(ACCENT); c.setFont("Sans", 8)
+        c.drawCentredString(cx, top_y, plabel)
+        c.setFillColor(MUTED); c.setFont("Body-It", 8.5)
+        c.drawCentredString(cx, top_y - 12, sub)
+        animal = animal_do_ramo(p)
+        elem = elemento_do_ramo(p)
+        col = COR_ELEM.get(elem, INK)
+        hexcol = HEX_ELEM.get(elem, HEX_INK)
+        drawn = False
+        mask_name = ANIMAL_ICON_FILES.get(animal)
+        if mask_name:
+            drawn = draw_icon_png(c, mask_name, cx, top_y - 78, ICON_SZ, hexcol)
+        if not drawn:
+            icon_fn = ANIMAL_ICONS.get(animal)
+            if icon_fn:
+                icon_fn(c, cx, top_y - 78, 28, col)
+            elif animal is None:
+                c.setFillColor(MUTED); c.setFont("Body-It", 9.5)
+                c.drawCentredString(cx, top_y - 90, "hora desconhecida")
+        if i < n - 1:
+            x_div = MARGIN_X + col_w*(i + 1)
+            hairline(c, x_div, top_y - 270, x_div, top_y - 30, HAIRLINE)
+        if animal:
+            c.setFillColor(INK); c.setFont("Display", 16)
+            c.drawCentredString(cx, top_y - 134, animal)
+        if elem:
+            elem_mask = ELEM_ICON_FILES.get(elem)
+            elem_drawn = draw_icon_png(c, elem_mask, cx, top_y - 200, ICON_SZ, hexcol) if elem_mask else False
+            if not elem_drawn:
+                icon = ELEM_ICON.get(elem)
+                if icon:
+                    icon(c, cx, top_y - 200, 24, col)
+            c.setFillColor(MUTED); c.setFont("Sans", 8)
+            c.drawCentredString(cx, top_y - 256, elem.upper())
+    c.setFillColor(BODY); c.setFont("Body-It", 11)
+    c.drawCentredString(PAGE_W/2, 150, "Cada animal é um temperamento em cena — o elemento do ramo colore o jeito de agir.")
+    motif_seal(c, PAGE_W/2, 100, "四柱", 9)
+    draw_footer(c, f"{roman.lower()} · {label.lower()}", ctx['page'])
+
+def page_cycles(c, dados, ctx, roman, label="Tempo"):
     draw_bg(c); draw_top_hanja(c, "運")
     l = dados.get('leitura') or {}
     ciclos = l.get('ciclosDeDecada') or []
     idade = dados.get('idadeAproximada')
-    draw_chapter_header(c, roman, "Tempo", "Seus ciclos ", "de década",
+    draw_chapter_header(c, roman, label, "Seus ciclos ", "de década",
                         "o clima de cada fase — quando plantar, construir, colher")
     x_line = MARGIN_X + 90
     y_top = PAGE_H - 300
@@ -814,8 +1387,19 @@ def page_cycles(c, dados, ctx, roman):
         tronco = (cic.get('tronco') or '').split(' — ')[-1]
         ramo = cic.get('ramo') or ''
         desc = f"{tronco} sobre {ramo}" if tronco else ramo
-        c.setFillColor(ACCENT if atual else BODY); c.setFont("Body-It" if atual else "Body", 9.5)
-        c.drawString(x_line + 100, y - 4, desc[:58])
+        desc_font = "Body-It" if atual else "Body"
+        # largura disponível pra descrição: reserva espaço pro ganji (canto
+        # direito) e, na linha atual, também pro "você está aqui" - com a
+        # fonte maior (D17) esses três elementos passaram a colidir sem essa
+        # conta, sobretudo quando tronco/ramo do LLM vêm mais longos.
+        right_edge = PAGE_W - MARGIN_X
+        if CJK and cic.get('ganji'):
+            right_edge -= pdfmetrics.stringWidth(ganji_para_hanja(cic['ganji']), CJK, 16) + 14
+        if atual:
+            right_edge -= pdfmetrics.stringWidth("você está aqui", "Body-It", 9) + 18
+        max_desc_w = max(60, right_edge - (x_line + 100))
+        c.setFillColor(ACCENT if atual else BODY); c.setFont(desc_font, 9.5)
+        c.drawString(x_line + 100, y - 4, _fit_line(desc, desc_font, 9.5, max_desc_w))
         if atual:
             c.setFillColor(ACCENT); c.setFont("Body-It", 9)
             c.drawRightString(PAGE_W - MARGIN_X - 44, y - 4, "você está aqui")
@@ -825,7 +1409,7 @@ def page_cycles(c, dados, ctx, roman):
     y_q = y_top - row_h*max(len(rows), 1) - 20
     c.setFillColor(MUTED); c.setFont("Body-It", 10)
     c.drawCentredString(PAGE_W/2, y_q, '"a percepção de sorte aumenta quando comportamento e contexto estão alinhados."')
-    draw_footer(c, f"{roman.lower()} · tempo", ctx['page'])
+    draw_footer(c, f"{roman.lower()} · {label.lower()}", ctx['page'])
 
 def page_synth(c, dados, resumo_rows, ctx, roman):
     draw_bg(c); draw_top_hanja(c, "定")
@@ -852,18 +1436,38 @@ def page_synth(c, dados, resumo_rows, ctx, roman):
         if dom: rows.append(('ELEMENTO DOMINANTE', dom))
         if ciclo_atual: rows.append(('CICLO ATUAL', ciclo_atual))
     for label, value in rows[:5]:
+        main, right = _split_main_right(value)
         c.setFillColor(ACCENT); c.setFont("Sans", 7.5)
         c.drawString(x, y, label.upper())
         hairline(c, x, y - 4, x + w, y - 4, HAIRLINE)
-        y = draw_wrapped(c, value, x, y - 22, w, size=15, leading=19, base_family="Body", color=INK)
-        y -= 14
+        main_w = _draw_mixed_line(c, x, y - 26, main, "Display", 17, INK)
+        if right:
+            right_w = pdfmetrics.stringWidth(right, "Body-It", 9.5)
+            c.setFillColor(MUTED); c.setFont("Body-It", 9.5)
+            if x + main_w + 20 + right_w <= x + w:
+                # cabe na mesma linha, alinhado à direita (layout original do v5)
+                c.drawRightString(x + w, y - 23, right)
+                y -= 46
+            else:
+                # texto do LLM veio mais longo do que o v5 original previa —
+                # desce o descritor pra linha de baixo em vez de sobrepor
+                y = draw_wrapped(c, right, x, y - 44, w, size=9.5, leading=13, base_family="Body-It", color=MUTED)
+                y -= 12
+        else:
+            y -= 40
     centered_ornament(c, PAGE_W/2, y - 4)
     c.setFillColor(INK); c.setFont("Display-It", 13)
     c.drawCentredString(PAGE_W/2, y - 30, '"quando você entende seu padrão, deixa de reagir')
     c.drawCentredString(PAGE_W/2, y - 52, 'no automático e passa a agir com intenção."')
     motif_seal(c, PAGE_W/2, y - 90, "四柱", 9)
-    c.setFillColor(MUTED); c.setFont("Sans", 8)
     marca = "SAJU BRASIL" + (f"   ·   PARA {nome.upper()}" if nome else "") + f"   ·   EDIÇÃO {'PREMIUM' if produto == 'premium' else 'ESSENCIAL'} V.5   ·   SAJUBRASIL.COM.BR"
+    # nome completo (D19) pode deixar essa linha mais longa que o normal -
+    # encolhe a fonte em vez de deixar vazar a margem
+    max_marca_w = PAGE_W - 2*MARGIN_X
+    marca_size = 8.0
+    while marca_size > 6.0 and pdfmetrics.stringWidth(marca, "Sans", marca_size) > max_marca_w:
+        marca_size -= 0.5
+    c.setFillColor(MUTED); c.setFont("Sans", marca_size)
     c.drawCentredString(PAGE_W/2, y - 150, marca)
     draw_footer(c, f"{roman.lower()} · síntese", ctx['page'])
 
@@ -906,22 +1510,47 @@ def page_closing(c, dados, ctx, disclaimer_override=None):
 # Capítulos narrativos (dinâmicos, a partir de dados['relatorio'])
 # ----------------------------------------------------------------------------
 
+_KIND_PAGE = {'cycles': page_cycles, 'archetypes': page_archetypes, 'animals': page_animals,
+              'structure': page_structure_elements}
+
 def render_narrative(c, ctx, dados, chapters, emit):
     """Desenha os capítulos do relatório com paginação automática. Retorna o
-    próximo índice romano livre (para a página de síntese que vem depois)."""
+    próximo índice romano livre (para a página de síntese que vem depois).
+
+    Capítulos com 'kind' (ciclos/arquétipos/animais) ganham a página de
+    dados/gráfico ANTES da prosa — mesmo número romano e label, a prosa
+    continua como página de continuação (sem repetir o título grande),
+    como um capítulo de livro que abre com uma ilustração de página cheia."""
     roman_idx = 5  # I..IV já usados pelas páginas fixas/estruturais
+    # rótulos já usados no livro (páginas fixas antes e a Síntese depois) -
+    # evita que um capítulo do LLM repita o mesmo rótulo no rodapé/cabeçalho
+    used_labels = {'abertura', 'método', 'metodo', 'estrutura', 'balança', 'balanca', 'respiro', 'síntese', 'sintese'}
     for hi, sec in enumerate(chapters):
         roman = to_roman(roman_idx); roman_idx += 1
         heading = sec['heading'] or 'Sua leitura'
-        label = derive_label(heading)
-        hanja = HANJA_CYCLE[hi % len(HANJA_CYCLE)]
-        title_main, title_it = split_title(heading)
+        label = derive_label(heading, avoid=used_labels)
+        used_labels.add(label.lower())
+        chapter_tag = f"{roman.lower()} · {label.lower()}"
+        kind = sec.get('kind')
+
+        opener_drawn = False
+        page_fn = _KIND_PAGE.get(kind)
+        if page_fn:
+            page_fn(c, dados, ctx, roman, label)
+            emit()
+            opener_drawn = True
+
         draw_bg(c)
-        draw_top_hanja(c, hanja)
-        draw_chapter_header(c, roman, label, title_main, title_it)
-        chapter_tag = f"{roman.lower()} · {label}"
+        if opener_drawn:
+            draw_running_head(c, roman, label)
+            y = PAGE_H - 150
+        else:
+            hanja = HANJA_CYCLE[hi % len(HANJA_CYCLE)]
+            draw_top_hanja(c, hanja)
+            title_main, title_it = split_title(heading)
+            draw_chapter_header(c, roman, label, title_main, title_it)
+            y = PAGE_H - 260
         x = CONTENT_X; w = CONTENT_W
-        y = PAGE_H - 260
 
         def new_page(_tag=chapter_tag):
             draw_footer(c, _tag, ctx['page'])
@@ -936,10 +1565,6 @@ def render_narrative(c, ctx, dados, chapters, emit):
             y -= 8
         draw_footer(c, chapter_tag, ctx['page'])
         emit()
-        if sec['is_cycles']:
-            roman_c = to_roman(roman_idx); roman_idx += 1
-            page_cycles(c, dados, ctx, roman_c)
-            emit()
     return roman_idx
 
 # ----------------------------------------------------------------------------

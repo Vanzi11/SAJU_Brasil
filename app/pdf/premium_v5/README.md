@@ -8,7 +8,10 @@ vermelho (dojang).
 ## Requisitos
 
 - Python 3.9+
-- `pip install reportlab`
+- `pip install reportlab pillow`
+  (Pillow é opcional em tempo de execução — só é usada para tingir os ícones
+  raster dos animais/elementos em `assets/icons/`; sem ela, o gerador cai de
+  volta pros ícones vetoriais desenhados à mão)
 
 ## Uso
 
