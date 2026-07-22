@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Saju Brasil — Leitura Premium, gerador de PDF · direção de arte v5 ("livro de arte de Seul").
+Bitna Saju — Leitura Premium, gerador de PDF · direção de arte v5 ("livro de arte de Seul").
 
 Uso:
     python build_pdf.py entrada.json saida.pdf
@@ -218,7 +218,7 @@ def draw_footer(c: canvas.Canvas, chapter: str, page: int) -> None:
     c.drawString(MARGIN_X, y, chapter)
     c.setFont("Sans", 7.5)
     c.drawCentredString(PAGE_W/2, y, f"— {page:02d} —")
-    c.drawRightString(PAGE_W - MARGIN_X, y, "SAJU BRASIL")
+    c.drawRightString(PAGE_W - MARGIN_X, y, "BITNA SAJU")
 
 def draw_hanja_glyph(c: canvas.Canvas, ch: str, x: float, y: float, size: float, color=ACCENT) -> None:
     if not CJK or not ch:
@@ -1003,7 +1003,7 @@ def page_colophon(c, dados):
     x = MARGIN_X; y = 160
     max_w = PAGE_W - 2*MARGIN_X
     c.setFillColor(MUTED); c.setFont("Sans", 8)
-    linhas = [f"EDIÇÃO {'PREMIUM' if produto == 'premium' else 'ESSENCIAL'} · V.5", "SAJU BRASIL"]
+    linhas = [f"EDIÇÃO {'PREMIUM' if produto == 'premium' else 'ESSENCIAL'} · V.5", "BITNA SAJU"]
     if nome: linhas.append(_fit_line(f"IMPRESSO PARA {nome.upper()}", "Sans", 8, max_w))
     for line in linhas:
         c.drawString(x, y, line); y -= 12
@@ -1029,7 +1029,7 @@ def page_intro(c, ctx):
           "gerações de estudiosos, que lê o mundo através de **cinco elementos** — Madeira, "
           "Fogo, Terra, Metal e Água — e dos ritmos com que eles se alimentam e se contêm.")
     p3 = ("Não para saber \"o que vai acontecer\" — mas para entender **com que padrões estão "
-          "jogando**. É assim que a Saju Brasil trabalha: *não é sobre prever sua vida — é sobre "
+          "jogando**. É assim que a Bitna Saju trabalha: *não é sobre prever sua vida — é sobre "
           "entender seus padrões para decidir melhor.*")
     y = draw_wrapped(c, p1, x, y, w); y -= 6
     y = draw_wrapped(c, p2, x, y, w); y -= 6
@@ -1460,7 +1460,7 @@ def page_synth(c, dados, resumo_rows, ctx, roman):
     c.drawCentredString(PAGE_W/2, y - 30, '"quando você entende seu padrão, deixa de reagir')
     c.drawCentredString(PAGE_W/2, y - 52, 'no automático e passa a agir com intenção."')
     motif_seal(c, PAGE_W/2, y - 90, "四柱", 9)
-    marca = "SAJU BRASIL" + (f"   ·   PARA {nome.upper()}" if nome else "") + f"   ·   EDIÇÃO {'PREMIUM' if produto == 'premium' else 'ESSENCIAL'} V.5   ·   SAJUBRASIL.COM.BR"
+    marca = "BITNA SAJU" + (f"   ·   PARA {nome.upper()}" if nome else "") + f"   ·   EDIÇÃO {'PREMIUM' if produto == 'premium' else 'ESSENCIAL'} V.5   ·   BITNASAJU.COM.BR"
     # nome completo (D19) pode deixar essa linha mais longa que o normal -
     # encolhe a fonte em vez de deixar vazar a margem
     max_marca_w = PAGE_W - 2*MARGIN_X
@@ -1580,8 +1580,8 @@ def gerar(entrada: str, saida: str) -> None:
     produto = dados.get('produto', 'premium')
 
     c = canvas.Canvas(saida, pagesize=A4)
-    c.setTitle(('Leitura Premium — ' if produto == 'premium' else 'Leitura de Saju — ') + (nome or 'Saju Brasil'))
-    c.setAuthor('Saju Brasil')
+    c.setTitle(('Leitura Premium — ' if produto == 'premium' else 'Leitura de Saju — ') + (nome or 'Bitna Saju'))
+    c.setAuthor('Bitna Saju')
 
     ctx = {'page': 1}
     def emit():

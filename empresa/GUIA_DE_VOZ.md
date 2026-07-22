@@ -1,4 +1,4 @@
-# Guia de Voz — Saju Brasil
+# Guia de Voz — Bitna Saju
 
 Fonte única da identidade verbal da marca. Todos os prompts, posts, páginas de venda e e-mails derivam daqui. Alterações neste guia se propagam para tudo.
 

@@ -1,4 +1,4 @@
-# SAJU Brasil
+# Bitna Saju
 
 > **🤖 Para IAs continuando este trabalho: leia `CONTINUIDADE.md` PRIMEIRO.** Ele contém o estado do projeto, as regras invioláveis da marca, a tarefa pendente prioritária e a ordem de leitura dos documentos. Cada pasta tem seu próprio README.
 

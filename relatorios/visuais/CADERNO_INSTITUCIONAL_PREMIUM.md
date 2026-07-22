@@ -12,7 +12,7 @@ Na Coreia, antes de um casamento, de uma sociedade ou de uma grande decisão, é
 
 O Saju não é religião, nem adivinhação. É um sistema de observação refinado por gerações de estudiosos, que lê o mundo através de **cinco elementos** — Madeira, Fogo, Terra, Metal e Água — e dos ritmos com que eles se alimentam e se contêm. Na Coreia de hoje, ele convive naturalmente com a vida moderna: universitárias consultam o Saju antes de escolher carreira, casais antes do casamento, empreendedores antes de abrir negócios. Não para saber "o que vai acontecer" — mas para entender **com que padrões estão jogando**.
 
-É assim que a Saju Brasil trabalha: **não é sobre prever sua vida — é sobre entender seus padrões para decidir melhor.**
+É assim que a Bitna Saju trabalha: **não é sobre prever sua vida — é sobre entender seus padrões para decidir melhor.**
 
 ---
 

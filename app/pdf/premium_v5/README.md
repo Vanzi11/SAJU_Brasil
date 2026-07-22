@@ -1,4 +1,4 @@
-# Saju Brasil — Leitura Premium — PDF generator (v5)
+# Bitna Saju — Leitura Premium — PDF generator (v5)
 
 Gerador em Python/reportlab do visual "livro de arte de Seul" (D9): relatório
 A4 editorial, capa com hanja fantasma, pilares como cartas, elementos como

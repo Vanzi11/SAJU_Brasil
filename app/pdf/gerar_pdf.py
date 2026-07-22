@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-SAJU Brasil — Gerador de PDF · Direção de arte v2 "Livraria de Seul"
+Bitna Saju — Gerador de PDF · Direção de arte v2 "Livraria de Seul"
 Paleta: marfim, lavanda suave, roxo profundo, dourado, cinza quente + selo vermelho.
 Uso: python3 gerar_pdf.py entrada.json saida.pdf
 """
@@ -548,7 +548,7 @@ CADERNO = [
     ('Antes de ler o seu mapa', 'Uma tradição de séculos, agora na sua mão', [
         'Na Coreia, antes de um casamento, de uma sociedade ou de uma grande decisão, é comum consultar o <b>Saju</b> (四柱) — os "quatro pilares". A palavra vem do costume de ler o destino de uma pessoa a partir de quatro colunas: o ano, o mês, o dia e a hora em que ela nasceu. Cada pilar carrega dois caracteres; os oito juntos formam um retrato único — o seu.',
         'O Saju não é religião, nem adivinhação. É um sistema de observação refinado por gerações de estudiosos, que lê o mundo através de <b>cinco elementos</b> — Madeira, Fogo, Terra, Metal e Água — e dos ritmos com que eles se alimentam e se contêm. Na Coreia de hoje, ele convive naturalmente com a vida moderna: universitárias consultam o Saju antes de escolher carreira, casais antes do casamento, empreendedores antes de abrir negócios.',
-        'Não para saber "o que vai acontecer" — mas para entender <b>com que padrões estão jogando</b>. É assim que a Saju Brasil trabalha: <i>não é sobre prever sua vida — é sobre entender seus padrões para decidir melhor.</i>']),
+        'Não para saber "o que vai acontecer" — mas para entender <b>com que padrões estão jogando</b>. É assim que a Bitna Saju trabalha: <i>não é sobre prever sua vida — é sobre entender seus padrões para decidir melhor.</i>']),
     ('Como ler o seu mapa', 'O mapa em camadas', [
         '<b>Os Quatro Pilares</b> — ano (suas raízes e herança), mês (sua vida pública e carreira), dia (seu eu íntimo e seus vínculos) e hora (seus projetos e sua maturidade).',
         '<b>O Mestre do Dia</b> — o caractere que rege o seu pilar do dia é o centro de tudo: o "você essencial". Todo o restante do mapa é lido em relação a ele.',
@@ -773,7 +773,7 @@ def pagina_upsell(c, dados):
         p.drawOn(c, 140, y-hp)
         y -= hp + 13
     c.setFillColor(ROXO_MED); c.setFont('Times-Italic', 10.5)
-    c.drawCentredString(W/2, y-14, 'saiba mais em sajubrasil.com.br')
+    c.drawCentredString(W/2, y-14, 'saiba mais em bitnasaju.com.br')
     numero(c)
     c.showPage()
 
@@ -784,7 +784,7 @@ def gerar(entrada, saida):
     nome = dados.get('nome') or ''
     fixo = io.BytesIO()
     c = rl_canvas.Canvas(fixo, pagesize=A4)
-    c.setTitle(('Leitura Premium — ' if premium else 'Leitura Essencial — ') + (nome or 'Saju Brasil'))
+    c.setTitle(('Leitura Premium — ' if premium else 'Leitura Essencial — ') + (nome or 'Bitna Saju'))
     pagina_capa(c, dados)
     if premium:
         paginas_caderno(c)

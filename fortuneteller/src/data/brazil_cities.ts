@@ -1,6 +1,6 @@
 /**
  * Cidades brasileiras — longitude e timezone IANA para cálculo de Saju
- * (SAJU Brasil — adaptação do motor para nascimentos no Brasil)
+ * (Bitna Saju — adaptação do motor para nascimentos no Brasil)
  *
  * A timezone IANA carrega todo o histórico de horário de verão brasileiro
  * (1931–2019, com variações por estado), essencial para converter a hora

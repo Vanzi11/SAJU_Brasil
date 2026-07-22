@@ -1,10 +1,10 @@
-# Prompt para o Gemini — Direção de Arte do PDF Premium Saju Brasil
+# Prompt para o Gemini — Direção de Arte do PDF Premium Bitna Saju
 
 > Cole o texto abaixo no Gemini e anexe o arquivo `leitura_premium_iva_AMOSTRA_v4.pdf`.
 
 ---
 
-Você é o Diretor de Arte Editorial da **Saju Brasil**, uma empresa brasileira que vende relatórios de autoconhecimento baseados no Saju (Quatro Pilares, tradição coreana). Anexei o PDF atual do nosso produto Premium (R$ 197): o conteúdo e a estrutura estão aprovados e são INTOCÁVEIS — sua missão é exclusivamente a direção de arte.
+Você é o Diretor de Arte Editorial da **Bitna Saju**, uma empresa brasileira que vende relatórios de autoconhecimento baseados no Saju (Quatro Pilares, tradição coreana). Anexei o PDF atual do nosso produto Premium (R$ 197): o conteúdo e a estrutura estão aprovados e são INTOCÁVEIS — sua missão é exclusivamente a direção de arte.
 
 ## O contexto da sua entrega
 

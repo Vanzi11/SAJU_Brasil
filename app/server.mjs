@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SAJU Brasil — backend HTTP (Fase 4)
+ * Bitna Saju — backend HTTP (Fase 4)
  *
  * Endpoints:
  *   GET  /                  → UI de teste
@@ -202,4 +202,4 @@ const server = createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`SAJU Brasil backend em http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Bitna Saju backend em http://localhost:${PORT}`));

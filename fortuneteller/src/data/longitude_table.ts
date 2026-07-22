@@ -242,7 +242,7 @@ export function resolveBirthCityForSaju(birthCity?: string): string {
   if (KOREA_CITY_LONGITUDE[name] !== undefined) {
     return name;
   }
-  // SAJU Brasil: preserva nome canônico de cidade brasileira reconhecida
+  // Bitna Saju: preserva nome canônico de cidade brasileira reconhecida
   const brazilCity = getBrazilCityInfo(name);
   if (brazilCity) {
     return brazilCity.name;

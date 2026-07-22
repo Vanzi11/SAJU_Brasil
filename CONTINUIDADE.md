@@ -1,6 +1,6 @@
 # CONTINUIDADE — Leia isto primeiro
 
-Você é a IA que assume a construção da **Saju Brasil** — empresa de relatórios de autoconhecimento baseados no Saju (Quatro Pilares, tradição coreana), vendidos online para o público brasileiro. Este documento transfere todo o contexto da sessão anterior (Claude Fable 5, jul/2026). O dono do projeto é o **Ivã** (trate no masculino; ele é leigo em programação — explique comandos passo a passo, PowerShell no Windows).
+Você é a IA que assume a construção da **Bitna Saju** — empresa de relatórios de autoconhecimento baseados no Saju (Quatro Pilares, tradição coreana), vendidos online para o público brasileiro. Este documento transfere todo o contexto da sessão anterior (Claude Fable 5, jul/2026). O dono do projeto é o **Ivã** (trate no masculino; ele é leigo em programação — explique comandos passo a passo, PowerShell no Windows).
 
 ## Ordem de leitura obrigatória
 

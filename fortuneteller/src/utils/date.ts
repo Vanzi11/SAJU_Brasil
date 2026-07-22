@@ -40,7 +40,7 @@ export function getAdjustedBirthInstantForSaju(
   birthTime: string,
   birthCity?: string
 ): Date {
-  // SAJU Brasil: cidades brasileiras seguem fluxo próprio (timezone IANA + longitude)
+  // Bitna Saju: cidades brasileiras seguem fluxo próprio (timezone IANA + longitude)
   if (isBrazilBirthCity(birthCity)) {
     return getAdjustedBirthInstantBrazilForSaju(solarDate, birthTime, birthCity!);
   }
@@ -50,7 +50,7 @@ export function getAdjustedBirthInstantForSaju(
 }
 
 /**
- * SAJU Brasil — instante ajustado para nascimentos no Brasil.
+ * Bitna Saju — instante ajustado para nascimentos no Brasil.
  *
  * 1. Interpreta a hora civil na timezone IANA da cidade (horário de verão
  *    histórico 1931–2019 aplicado automaticamente) → instante UTC.

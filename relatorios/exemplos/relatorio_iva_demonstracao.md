@@ -1,6 +1,6 @@
 # Sua leitura de Saju — Ivã
 
-> **Demonstração v2 — voz oficial da Saju Brasil** (estrutura V3 + tom decidido em 18/07/2026). Mapa calculado: 11/11/1982, 12:30, Salvador (BA), masculino.
+> **Demonstração v2 — voz oficial da Bitna Saju** (estrutura V3 + tom decidido em 18/07/2026). Mapa calculado: 11/11/1982, 12:30, Salvador (BA), masculino.
 
 ---
 

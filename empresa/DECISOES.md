@@ -1,4 +1,4 @@
-# Registro de Decisões — Saju Brasil
+# Registro de Decisões — Bitna Saju
 
 Decisões tomadas em conjunto (Ivã + Claude). Nada aqui é imutável, mas mudanças devem ser registradas.
 
@@ -23,9 +23,10 @@ Decisões tomadas em conjunto (Ivã + Claude). Nada aqui é imutável, mas mudan
 ## Pendências abertas
 
 - Tipo sanguíneo no Premium: manter como "bônus cultural coreano" rotulado ou trocar por sorte anual mês a mês (tende à troca — mais valor real, já calculado pelo motor).
-- Política de reembolso, LGPD e transparência de IA no formulário (obrigatório antes do lançamento).
+- Política de reembolso, LGPD e transparência de IA no formulário (obrigatório antes do lançamento) — vira parte do formulário de nascimento da Fase 5 (ver `docs/FASE5_AUTOMACAO_VENDAS.md`).
 - Meta de validação concreta (sugestão: X vendas em 60 dias com R$ 500–1.000 de tráfego).
-- EMPRESA.md v1.1 consolidando tudo isso.
+- ~~EMPRESA.md v1.1 consolidando tudo isso.~~ Feito em D22 (21/07/2026).
+- **Plano de automação de vendas (Fase 5)** desenhado em `docs/FASE5_AUTOMACAO_VENDAS.md` (21/07/2026) — **adiado de propósito**: Ivã decidiu validar com lançamento manual primeiro (ver `docs/FASE4B_LANCAMENTO_MANUAL_VALIDACAO.md`, 21/07/2026). Só ativar quando bater o gatilho de volume/tempo/validação descrito lá.
 
 ## 19/07/2026 (madrugada) — Direção de arte
 
@@ -109,3 +110,15 @@ A revisão visual achou um **bug real, pré-existente, não causado por mim**: a
 Além das 5, o Ivã pediu (fora da lista numerada) que a última página deixasse claro que é a edição Essencial e apontasse o que o Premium acrescenta. Nova `pagina_upsell()`: fecha com "Isto foi a Edição Essencial do seu mapa" + uma lista curta e concreta do que o Premium aprofunda (bloqueio central, dez arquétipos completos, animais e sinsais, ciclos de década completos) — tom convite, não venda pesada, sem preço nem CTA agressivo.
 
 Amostra gerada com o mesmo dado real já usado nesta sessão (Fagundes Nogueira Proença, 15/06/1987): `relatorios/exemplos/leitura_essencial_fagundes_1987_AMOSTRA_v2.pdf`, 11 páginas (capa · antes de ler · pilares · elementos · 4 páginas de corpo · síntese · nota · upsell).
+
+## 21/07/2026
+
+**D22. Nomenclatura e diferenciais dos 4 produtos travados** — o Ivã fechou os 4 tipos de produto (nome + lista de diferenciais de marketing), com **preços ainda em aberto** (os valores de D4 seguem só como referência de funil até nova decisão de preço): 🌿 **Plano Essencial**, ⭐ **Plano Premium**, 💞 **Sinastria Amorosa (Saju de Casal)**, 🤝 **Sinastria Societária & Parcerias**. Lista completa de diferenciais em `empresa/EMPRESA.md` (seção Produtos, v1.1). Contagem de páginas dos relatórios não é mais um diferencial declarado — irrelevante pra decisão de produto, cada gerador de PDF pagina dinamicamente conforme o texto.
+
+Implementação: Essencial e Premium seguem exatamente como já construído (D14–D21). Amorosa e Societária **continuam sendo o mesmo SKU técnico** — `relatorios/prompts/sinastria.md` com campo `tipoRelacao` — não faz sentido duplicar engine/prompt só porque agora são 2 produtos de marketing distintos; a diferenciação de conteúdo entre os dois tipos já existe no prompt (seção "Foco por tipo de relação") e foi reforçada nesta sessão com os rótulos exatos de cada diferencial anunciado (ver alteração em `sinastria.md`).
+
+**D23. Marca travada: Bitna Saju** (21/07/2026) — nome "Saju Brasil" descartado, motivo: (1) colisão direta com concorrente ativo já usando o nome "Saju Brasil" (perfil TikTok @sajubrasil, domínio sajubrasil.com, se apresentando como "único canal oficial"); (2) "Brasil" no nome travaria a expansão já planejada para LATAM (relatório em português, espanhol e inglês). "Bitna" (빛나, "brilhar/reluzir") é nome coreano legítimo, sem colisão de marca encontrada nas checagens feitas, pronuncia bem nos 3 idiomas-alvo, e mantém "Saju" explícito conforme D1. Verificado também que "Saju" sozinho (sem "Bitna") não pode virar handle simplificado — @saju no Instagram já pertence a uma marca de calçados com 399 mil seguidores, forte na América Latina.
+
+Texto substituído por "Bitna Saju" em todos os documentos do repositório (README, EMPRESA, GUIA_DE_VOZ, PROMPT_GEMINI_DESIGN, CONTINUIDADE, prompts dos 3 relatórios, caderno institucional, demonstração) **e também no código** — HTML da UI de teste (`app/public/index.html`), `server.mjs`, os dois geradores de PDF (`gerar_pdf.py`, `premium_v5/build_pdf.py` — inclusive a marca-d'água/rodapé que aparece nos PDFs entregues, `SAJUBRASIL.COM.BR` → `BITNASAJU.COM.BR`), `relatorios/gerar_prompt.mjs` e os comentários internos do motor (`fortuneteller/src/`). Validado com `py_compile` e `node --check` — nada quebrou. **Pendências que seguem em aberto:**
+1. ~~Domínio ainda não confirmado como disponível~~ — **confirmado pelo Ivã (21/07/2026): `bitnasaju.com` e `bitnasaju.com.br` livres nos dois.** Recomendação: registrar os dois já (mesmo que o `.com.br` seja o principal agora) — o `.com` protege o nome pro plano de expansão LATAM/internacional antes que outra pessoa registre depois da notícia se espalhar.
+2. Nome do repositório GitHub (`SAJU_Brasil`) não foi alterado — é uma ação que só o Ivã pode fazer (configurações do repositório), não afeta o funcionamento de nada, pode ficar pra depois sem pressa.

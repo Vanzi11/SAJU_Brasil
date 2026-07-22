@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SAJU Brasil — pipeline de geração de prompt para relatórios via LLM
+ * Bitna Saju — pipeline de geração de prompt para relatórios via LLM
  *
  * Uso:
  *   node gerar_prompt.mjs individual <data> <hora> <cidade> <sexo>

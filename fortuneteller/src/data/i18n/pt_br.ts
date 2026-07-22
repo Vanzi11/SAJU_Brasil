@@ -1,5 +1,5 @@
 /**
- * SAJU Brasil — i18n pt-BR
+ * Bitna Saju — i18n pt-BR
  *
  * Tradução determinística dos termos estruturais emitidos pelo motor.
  * Textos interpretativos longos (frases em coreano) NÃO são traduzidos aqui:
